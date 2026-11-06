@@ -17,9 +17,9 @@ Pour vérifier ou modifier le projet, consulte le [guide de maintenance](docs/ma
 ## Réviser
 
 - **Focus**. Choisis une matière et lance 25 minutes de travail. Une session terminée rapporte 50 XP et ouvre une pause de cinq minutes. Les ambiances sonores et leur volume se règlent depuis le minuteur.
-- **Cours**. Explore 95 chapitres courts par matière, cherche une notion, ouvre la correction d’un exercice et marque le chapitre comme lu. Tu peux revenir à n’importe quel chapitre ou reprendre le dernier ouvert depuis l’accueil.
+- **Cours**. Explore 84 chapitres courts par matière, cherche une notion, ouvre la correction d’un exercice et marque le chapitre comme lu. Tu peux revenir à n’importe quel chapitre ou reprendre le dernier ouvert depuis l’accueil.
 - **Exercices de maths**. Choisis un chapitre ou mélange les 13 chapitres. Les énoncés sont générés à partir de 53 types d’exercices. Après une erreur ou un blocage, lis la correction puis travaille la même méthode avec d’autres valeurs. Deux variantes réussies d’affilée valident la reprise. Les cartes de maths fournies ouvrent ce parcours quand tu les notes « Moyen » ou « Difficile ».
-- **Flashcards**. Choisis une matière ou pars d’un chapitre. Les 321 cartes sont prêtes à réviser. En révision espacée, dix rappels faciles rapportent 20 XP. Dans les matières autres que les maths, une carte difficile revient le lendemain. Pour les cartes de maths fournies, « Moyen » ou « Difficile » lance plutôt une reprise immédiate avec d’autres valeurs. L’entraînement libre se relance à volonté et conserve le calendrier des cartes.
+- **Flashcards**. Choisis une matière ou pars d’un chapitre. Les 288 cartes sont prêtes à réviser. En révision espacée, dix rappels faciles rapportent 20 XP. Dans les matières autres que les maths, une carte difficile revient le lendemain. Pour les cartes de maths fournies, « Moyen » ou « Difficile » lance plutôt une reprise immédiate avec d’autres valeurs. L’entraînement libre se relance à volonté et conserve le calendrier des cartes.
 - **Feynman**. Chaque chapitre propose une question, un indice et des étapes pour écrire une explication et un exemple. Après avoir enregistré ta réponse, compare-la à une explication possible et retravaille-la si nécessaire.
 - **Progression**. Suis ta série de jours, ton temps par matière et ton XP. Les niveaux Érudit et Maître débloquent des thèmes et des avatars.
 
@@ -27,7 +27,7 @@ Les notes, cartes personnelles, chapitres lus, exercices en cours et statistique
 
 ## Contenu pédagogique
 
-La bibliothèque suit les grands thèmes du tronc commun de Seconde GT. Elle propose l’anglais et deux choix pour l’autre langue vivante, l’espagnol et l’allemand. En français, les cours travaillent les genres et méthodes que l’élève peut appliquer aux œuvres choisies par son professeur. En EPS, les fiches accompagnent les activités pratiquées en classe.
+La bibliothèque couvre dix matières de Seconde GT. L’anglais et l’espagnol sont les deux langues proposées. En français, les cours travaillent les genres et méthodes que l’élève peut appliquer aux œuvres choisies par son professeur.
 
 - [Tronc commun et programmes sur Éduscol](https://eduscol.education.gouv.fr/4368/enseigner-au-lycee-generaltechnologique)
 - [Programme de mathématiques de Seconde applicable à la rentrée 2026](https://www.education.gouv.fr/bo/2026/Hebdo14/MENE2602914A)

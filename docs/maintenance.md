@@ -38,6 +38,8 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 
 Les données d’étude sont stockées dans `localStorage` sous la clé `focusbro:v1`. Lorsqu’un champ est ajouté, complète l’état de départ et vérifie le chargement d’une sauvegarde antérieure. Conserve les identifiants utilisés dans les sauvegardes et les liens vers les cours.
 
+Lorsqu’une matière est retirée du catalogue, la progression acquise compte dans les totaux. Les cartes, notes et entrées d’historique de cette matière sont masquées. Une session de focus déjà lancée reprend sous « Autre matière ».
+
 ## Ajouter ou corriger du contenu
 
 Un chapitre regroupe ses explications, un exercice corrigé, un défi Feynman avec indice et réponse proposée, et ses cartes. Ajoute-le dans le fichier de sa matière avec un identifiant unique. Les identifiants des cartes suivent leur ordre dans le chapitre. Pour préserver les révisions existantes, corrige les cartes en place et ajoute les nouvelles à la fin.

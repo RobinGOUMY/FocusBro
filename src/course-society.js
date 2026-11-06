@@ -77,42 +77,4 @@ const emc = [
   ]),
 ]
 
-const eps = [
-  chapter('performance-mesurable', 'Mesurer et améliorer une performance', 'EPS · Performance', 'Apprends à comparer deux essais dans des conditions comparables.', [
-    ['Choisir un indicateur', 'Une performance se mesure par exemple en temps, distance ou précision. Note aussi les conditions, comme la longueur du parcours ou le matériel. Pour comparer deux essais, garde le même protocole et précise si un nombre plus grand ou plus petit représente un progrès.'],
-    ['Interpréter les essais', 'Une mesure isolée peut être influencée par la fatigue ou le hasard. Observe plusieurs essais et demande un retour ciblé sur une phase du geste. Par exemple, dans une course, sépare le départ, la gestion de l’allure et la fin pour identifier un point à travailler.'],
-  ], ['Une personne court 60 m en 10 s puis en 9,5 s avec les mêmes règles. Quel progrès observe-t-on ?', 'Elle gagne 0,5 s sur la même distance. Des essais supplémentaires permettent de vérifier si le progrès se répète.'],
-  ['Explique pourquoi un chronomètre aide à progresser quand on note aussi ce qu’on a changé.', 'Imagine deux départs différents sur la même piste.', 'Le temps dit ce qui s’est passé. Noter la façon de partir aide à formuler une hypothèse sur la cause du changement, à vérifier au prochain essai.'], [
-    ['Pourquoi standardiser les conditions de deux essais ?', 'Pour que l’écart soit plus facile à interpréter.'], ['Cite deux indicateurs de performance.', 'Le temps et la distance, par exemple.'], ['À quoi sert un retour ciblé ?', 'À identifier une action concrète à modifier pour le prochain essai.'],
-  ]),
-  chapter('orientation-securite', 'Se déplacer et s’orienter en sécurité', 'EPS · Environnements', 'Prépare un itinéraire et ajuste-le à ce que tu observes sur le terrain.', [
-    ['Lire les repères', 'La légende explique les symboles et l’échelle relie une distance sur la carte à une distance réelle. Oriente la carte et repère des éléments stables comme un croisement ou un bâtiment. Choisis un itinéraire et des points de passage faciles à vérifier.'],
-    ['Adapter le projet', 'Le trajet le plus court sur le papier peut être plus difficile ou moins sûr. Tiens compte du terrain, de tes moyens et des consignes de l’enseignant. Si les repères ne correspondent plus, arrête-toi, reviens à un point certain et réévalue le trajet.'],
-  ], ['Deux chemins rejoignent une balise : l’un est court mais difficile à suivre, l’autre plus long mais balisé. Lequel choisir ?', 'Le choix dépend de ton niveau et du terrain. Le chemin balisé peut réduire les erreurs et le risque malgré la distance plus grande.'],
-  ['Explique pourquoi suivre des points de passage aide davantage que viser directement la balise.', 'Imagine un parcours avec un pont, un carrefour puis un grand arbre.', 'Chaque repère confirmé me dit où j’en suis. Si je ne reconnais pas le suivant, je peux revenir au dernier point certain.'], [
-    ['À quoi sert la légende d’une carte ?', 'À expliquer le sens des couleurs et symboles.'], ['Que signifie 1 : 10 000 ?', 'Une unité sur la carte correspond à 10 000 unités sur le terrain.'], ['Que faire si la carte et les repères ne correspondent plus ?', 'S’arrêter, identifier un dernier point certain et réévaluer le trajet dans le cadre prévu.'],
-  ]),
-  chapter('prestation-corporelle', 'Composer et présenter une prestation', 'EPS · Expression', 'Choisis des mouvements qui rendent une intention visible pour le public.', [
-    ['Créer une composition', 'Une prestation organise des mouvements dans l’espace et le temps. Tu peux varier hauteur, vitesse, orientation, amplitude et pauses. Dans un groupe, le mouvement simultané donne un effet différent du canon, où le même mouvement part successivement. Choisis des variations qui servent l’intention.'],
-    ['Observer et donner un retour', 'Un spectateur peut décrire ce qu’il a vu puis expliquer l’effet perçu. Un retour utile porte sur un élément précis, par exemple la lisibilité d’un arrêt ou la synchronisation. En activité acrobatique, applique les consignes de sécurité et les rôles de parade définis par l’enseignant.'],
-  ], ['Comment rendre visible une rupture dans une suite rapide de mouvements ?', 'Un arrêt net, un changement de niveau ou un passage soudain à un mouvement lent peut marquer la rupture.'],
-  ['Explique comment deux groupes peuvent utiliser le même mouvement pour faire ressentir des choses différentes.', 'Change le rythme, l’orientation ou la distance entre les personnes.', 'Un geste rapide et serré peut donner une sensation d’urgence. Le même geste, lent avec plus d’espace, peut paraître calme.'], [
-    ['Quelle différence entre unisson et canon ?', 'À l’unisson, le geste commence ensemble. En canon, le même geste commence successivement.'], ['Cite deux paramètres d’un mouvement que tu peux faire varier.', 'L’amplitude et la vitesse, par exemple.'], ['Comment rendre un retour d’observation utile ?', 'Décrire un élément précis, son effet, puis proposer une piste concrète.'],
-  ]),
-  chapter('affrontement-cooperation', 'Opposition, coopération et tactique', 'EPS · Affrontement', 'Lis une situation d’opposition pour décider où agir et avec qui.', [
-    ['Observer avant de décider', 'En sport collectif, occuper des espaces différents offre plusieurs solutions au porteur du ballon. En duel, repérer une zone peu couverte peut orienter un choix de placement ou de frappe. Une tactique est une manière d’agir adaptée à l’adversaire, à ses partenaires et au score.'],
-    ['Tenir plusieurs rôles', 'Observer, arbitrer et jouer demandent des informations différentes. Un arbitre applique une règle connue. Un observateur relève un fait utile, comme le nombre de pertes de balle dans une zone. Après l’action, utilise ces faits pour décider d’un ajustement en équipe.'],
-  ], ['Tous les joueurs d’une équipe se rapprochent du ballon. Pourquoi cela peut-il aider l’adversaire ?', 'La défense couvre un espace réduit et les options de passe disparaissent. Un partenaire qui se démarque dans une autre zone crée une solution.'],
-  ['Explique pourquoi s’éloigner du ballon peut aider son équipe.', 'Pense à un espace libre et à une passe possible.', 'Si je m’écarte là où il n’y a pas de défenseur, mon partenaire a une option de passe. Un défenseur peut me suivre et libérer de la place ailleurs.'], [
-    ['Que signifie se démarquer ?', 'Se placer ou se déplacer pour devenir une option de jeu difficile à couvrir.'], ['Quel est le rôle de l’arbitre ?', 'Appliquer les règles et assurer le déroulement équitable du jeu.'], ['Que change une observation factuelle après un match ?', 'Elle permet d’appuyer un ajustement sur un événement mesurable plutôt que sur une impression seule.'],
-  ]),
-  chapter('entrainement-entretien', 'S’entraîner et analyser sa séance', 'EPS · Entretien', 'Relie un objectif d’entraînement, un effort et un retour sur ce que tu as ressenti.', [
-    ['Construire un projet', 'Une séance a un objectif précis. La durée, l’intensité, les répétitions et les récupérations modifient la charge. Un échauffement progressif prépare à l’activité prévue. Suis le cadre de l’enseignant et adapte la charge aux consignes et à tes ressources.'],
-    ['Noter pour ajuster', 'Le carnet d’entraînement peut contenir les exercices, les temps, les répétitions et le ressenti. Compare le prévu au réalisé. Un écart peut indiquer un mauvais dosage, une technique à travailler ou une récupération insuffisante. Change un paramètre à la fois pour mieux comprendre l’effet obtenu.'],
-  ], ['Pourquoi noter le temps de récupération en plus du nombre de répétitions ?', 'Deux séries identiques peuvent représenter des efforts différents si le repos varie. Le carnet aide à comprendre le ressenti et à comparer les séances.'],
-  ['Explique pourquoi progresser ne signifie pas rendre chaque séance plus difficile.', 'Pense à la récupération et à la qualité du mouvement.', 'Une séance trop dure peut dégrader le geste et laisser peu de récupération. En ajustant l’effort et le repos, on peut répéter des mouvements de meilleure qualité.'], [
-    ['Cite deux variables de la charge d’entraînement.', 'L’intensité et la durée, par exemple.'], ['Pourquoi conserver un carnet d’entraînement ?', 'Pour comparer les séances, observer les évolutions et ajuster le projet.'], ['À quoi sert l’échauffement ?', 'À préparer progressivement le corps et les gestes à l’activité prévue.'],
-  ]),
-]
-
-export default { ses, snt, emc, eps }
+export default { ses, snt, emc }

@@ -1,5 +1,5 @@
 import { setAmbience, setVolume, unlockAudio, chime } from './audio.js'
-import { subjects } from './content.js'
+import { hasSubject } from './content.js'
 import { courseById } from './courses.js'
 import { advanceMathTrack, beginMathTrack, mathContext, recordMathAttempt, skillForCard } from './math-practice.js'
 import { createState, dayKey, durations, freshTimer, gradeCard, levelInfo, remainingTime, restoreState, reviewCards, settleTimer, storageKey, studyStats } from './study.js'
@@ -10,7 +10,6 @@ const dialog = document.querySelector('#dialog')
 const toast = document.querySelector('#toast')
 const study = { subject: '', course: '', mode: 'due', queue: [], started: false, flipped: false }
 const library = { subject: '', query: '', filter: 'all' }
-const subjectIds = new Set(subjects.map(subject => subject.id))
 const pageFromUrl = () => pages.find(page => page.id === location.hash.slice(1).split('/')[0])?.id ?? 'accueil'
 const routeDetail = () => location.hash.split('/')[1] ?? ''
 const createId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -194,7 +193,7 @@ dialog.addEventListener('close', () => {
 async function startTimer() {
   const timer = state.timer
   const subject = app.querySelector('#timer-subject').value
-  if (timer.phase === 'focus' && !subjectIds.has(subject)) {
+  if (timer.phase === 'focus' && !hasSubject(subject)) {
     app.querySelector('#timer-subject').focus()
     notify('Choisis la matière de ta session.')
     return
@@ -488,7 +487,7 @@ const forms = {
     notify(saved ? 'Explication enregistrée' : 'Cette note a été supprimée dans un autre onglet.')
   },
   'card-form': async (form, values) => {
-    if (!values.question || !values.answer || !subjectIds.has(values.subject)) {
+    if (!values.question || !values.answer || !hasSubject(values.subject)) {
       notify('Indique une matière, une question et sa réponse.')
       return
     }
@@ -531,7 +530,7 @@ async function navigate(initial = false) {
   const detail = routeDetail()
   currentCourse = page === 'cours' ? courseById.get(detail) : null
   if (page === 'cours' && !currentCourse && detail !== library.subject) {
-    Object.assign(library, { subject: subjectIds.has(detail) ? detail : '', query: '', filter: 'all' })
+    Object.assign(library, { subject: hasSubject(detail) ? detail : '', query: '', filter: 'all' })
   }
   if (page === 'flashcards') {
     const chapter = courseById.get(detail)

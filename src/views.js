@@ -1,7 +1,7 @@
-import { subjects } from './content.js'
+import { hasSubject, subjects } from './content.js'
 import { courseById, courses } from './courses.js'
 import { courseExerciseSkills, mathSkills, problemFor, skillById, skillForCard } from './math-practice.js'
-import { dailyGoal, dayKey, durations, dueCards, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
+import { availableCustomCards, dailyGoal, dayKey, durations, dueCards, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
 
 const glyphs = {
   bolt: '<path d="m13 2-9 12h7l-1 8 10-12h-7l1-8Z"/>',
@@ -144,6 +144,7 @@ function moduleCard(page, symbol, color, title, detail, status) {
 export function dashboard(state) {
   const stats = studyStats(state)
   const due = dueCards(state).length
+  const noteCount = state.notes.filter(note => hasSubject(note.subject)).length
   const latest = latestCourse(state)
   const goal = Math.min(1, stats.todayMinutes / dailyGoal)
   const greeting = state.profile.name ? `Salut, ${escapeHtml(state.profile.name)} !` : 'Ton QG de révision'
@@ -168,7 +169,7 @@ export function dashboard(state) {
         <div class="module-grid">
           ${moduleCard(latest ? `cours/${latest.id}` : 'cours', 'book', 'sky', latest ? 'Reprendre un cours' : 'Bibliothèque de cours', latest ? `Reprends ta lecture de « ${latest.title} ». ` : 'Lis les cours de l’année à ton rythme, avec des exemples et des exercices corrigés.', `${courses.length} chapitres`)}
           ${moduleCard('flashcards', 'cards', 'purple', 'Flashcards', 'Teste ta mémoire et revois les notions au bon moment.', due ? `${countLabel(due, 'carte')} à réviser` : 'À jour')}
-          ${moduleCard('feynman', 'pen', 'mint', 'Carnet Feynman', 'Choisis un défi guidé et explique la notion avec tes mots.', state.notes.length ? countLabel(state.notes.length, 'note') : 'Défis guidés')}
+          ${moduleCard('feynman', 'pen', 'mint', 'Carnet Feynman', 'Choisis un défi guidé et explique la notion avec tes mots.', noteCount ? countLabel(noteCount, 'note') : 'Défis guidés')}
         </div>
       </section>
       <section aria-labelledby="mission-title">
@@ -353,7 +354,7 @@ export function flashcardsView(state, study) {
   const mastered = state.reviews.filter(item => item.grade === 'easy' && !item.practice).length
   const title = study.started ? 'Série terminée !' : practice ? 'Prêt à t’entraîner ?' : cards.length ? 'Prêt à tester ta mémoire ?' : 'Tu es à jour !'
   return `${heading('RAPPEL ACTIF', 'Flashcards', 'Cherche la réponse de mémoire, puis retourne la carte pour te corriger.')}
-    <div class="study-toolbar"><label class="field compact-field"><span id="card-subject-label">Matière</span><select id="card-subject" aria-labelledby="card-subject-label">${subjectOptions(study.subject, true)}</select></label><div class="toolbar-actions">${state.customCards.length ? button(`${icon('cards', 17)} Mes cartes`, 'manage-cards', 'secondary') : ''}${link(`${icon('book', 17)} ${course ? 'Relire le chapitre' : 'Parcourir les cours'}`, course ? `cours/${course.id}` : 'cours', 'secondary')}${!study.subject || study.subject === 'maths' ? link(`${icon('math', 17)} Exercices de maths`, course ? `exercices/${course.id}` : 'exercices', 'secondary') : ''}</div></div>
+    <div class="study-toolbar"><label class="field compact-field"><span id="card-subject-label">Matière</span><select id="card-subject" aria-labelledby="card-subject-label">${subjectOptions(study.subject, true)}</select></label><div class="toolbar-actions">${availableCustomCards(state).length ? button(`${icon('cards', 17)} Mes cartes`, 'manage-cards', 'secondary') : ''}${link(`${icon('book', 17)} ${course ? 'Relire le chapitre' : 'Parcourir les cours'}`, course ? `cours/${course.id}` : 'cours', 'secondary')}${!study.subject || study.subject === 'maths' ? link(`${icon('math', 17)} Exercices de maths`, course ? `exercices/${course.id}` : 'exercices', 'secondary') : ''}</div></div>
     ${course ? `<div class="deck-filter"><strong>${course.title}</strong><a href="#flashcards">Voir tous les chapitres ${icon('close', 14)}</a></div>` : ''}
     <div class="review-modes" aria-label="Mode de révision">${button(`${icon('calendar', 16)} À revoir`, 'review-mode', 'secondary', `data-value="due" aria-pressed="${!practice}"`)}${button(`${icon('rotate', 16)} Entraînement libre`, 'review-mode', 'secondary', `data-value="practice" aria-pressed="${practice}"`)}</div>
     <div class="focus-layout">
@@ -381,10 +382,10 @@ export function suggestedChallenge(state, currentId = '') {
 }
 
 export function feynmanView(state, courseId, selectedId) {
-  const legacyNote = state.notes.find(item => item.id === selectedId && !item.course)
+  const notes = state.notes.filter(item => hasSubject(item.subject)).sort((first, second) => second.updatedAt - first.updatedAt)
+  const legacyNote = notes.find(item => item.id === selectedId && !item.course)
   const course = legacyNote ? null : courseById.get(courseId) ?? suggestedChallenge(state)
-  const note = legacyNote ?? state.notes.find(item => item.course === course?.id)
-  const notes = [...state.notes].sort((first, second) => second.updatedAt - first.updatedAt)
+  const note = legacyNote ?? notes.find(item => item.course === course.id)
   const suggested = suggestedChallenge(state, course?.id)
   return `${heading('MÉTHODE FEYNMAN', 'Carnet Feynman', 'Relève un défi guidé et explique la notion avec des mots simples, comme à quelqu’un de 10 ans.')}
     <div class="focus-layout">
@@ -424,7 +425,7 @@ export function progressView(state) {
     ...state.sessions.map(item => ({ ...item, icon: 'timer', title: 'Session focus', detail: `${item.minutes} min` })),
     ...state.reviews.map(item => ({ ...item, icon: 'cards', title: 'Carte révisée', detail: { easy: 'Facile', medium: 'Moyen', hard: 'Difficile' }[item.grade] })),
     ...state.notes.map(item => ({ ...item, icon: 'pen', title: 'Explication Feynman', detail: item.title, at: item.createdAt, xp: 0 })),
-  ].sort((first, second) => second.at - first.at).slice(0, 8)
+  ].filter(item => hasSubject(item.subject)).sort((first, second) => second.at - first.at).slice(0, 8)
   return `${heading('STATISTIQUES', 'Ta progression', 'Retrouve le temps investi et les récompenses gagnées.')}
     <section class="panel padded progress-level"><div class="panel-title">${tile('award', 'purple')}<div><h2>Niveau ${level.index + 1} · ${level.current.title}</h2><p>${level.next ? `${level.next.xp - stats.xp} XP avant le niveau ${level.next.title}` : 'Tu as atteint le niveau Maître.'}</p></div></div>${bar(level.progress, 'Progression du niveau')}<div class="quest-caption"><span>${stats.xp} XP${level.next ? ` / ${level.next.xp} XP` : ''}</span><a href="#profil">Voir mes récompenses ${icon('arrow', 15)}</a></div></section>
     <div class="progress-grid">
@@ -466,5 +467,5 @@ export function cardForm(card) {
 }
 
 export function customCardList(state) {
-  return `<ul class="item-list">${state.customCards.map(card => `<li>${button(`<span><strong>${escapeHtml(card.question)}</strong><small>${subjectById(card.subject)?.name}</small></span>${icon('chevron', 17)}`, 'edit-card', 'list-button', `data-value="${card.id}"`)}</li>`).join('')}</ul>`
+  return `<ul class="item-list">${availableCustomCards(state).map(card => `<li>${button(`<span><strong>${escapeHtml(card.question)}</strong><small>${subjectById(card.subject).name}</small></span>${icon('chevron', 17)}`, 'edit-card', 'list-button', `data-value="${card.id}"`)}</li>`).join('')}</ul>`
 }

@@ -1,4 +1,4 @@
-import { starterCards } from './content.js'
+import { hasSubject, starterCards } from './content.js'
 import { courseCards } from './courses.js'
 import { createMathPractice } from './math-practice.js'
 
@@ -26,7 +26,11 @@ export function createState() {
 }
 
 export function restoreState(stored) {
-  return { ...createState(), ...stored }
+  const state = { ...createState(), ...stored }
+  if (state.timer.subject && !hasSubject(state.timer.subject)) {
+    state.timer = { ...state.timer, subject: 'autre' }
+  }
+  return state
 }
 
 export function freshTimer(phase = 'focus', subject = '') {
@@ -84,8 +88,12 @@ export function levelInfo(xp) {
   return { index, current, next, progress }
 }
 
+export function availableCustomCards(state) {
+  return state.customCards.filter(card => hasSubject(card.subject))
+}
+
 export function allCards(state) {
-  return [...courseCards, ...starterCards, ...state.customCards]
+  return [...courseCards, ...starterCards, ...availableCustomCards(state)]
 }
 
 export function dueCards(state, now = Date.now()) {

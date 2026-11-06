@@ -6,13 +6,13 @@ export const subjects = [
   { id: 'svt', name: 'SVT', icon: 'leaf', color: 'mint' },
   { id: 'anglais', name: 'Anglais', icon: 'message', color: 'purple' },
   { id: 'espagnol', name: 'Espagnol', icon: 'message', color: 'amber' },
-  { id: 'allemand', name: 'Allemand', icon: 'message', color: 'rose' },
   { id: 'ses', name: 'SES', icon: 'chart', color: 'amber' },
   { id: 'snt', name: 'SNT', icon: 'grid', color: 'sky' },
   { id: 'emc', name: 'EMC', icon: 'globe', color: 'purple' },
-  { id: 'eps', name: 'EPS', icon: 'target', color: 'mint' },
   { id: 'autre', name: 'Autre matière', icon: 'book', color: 'sky' },
 ]
+
+export const hasSubject = id => subjects.some(subject => subject.id === id)
 
 const decks = {
   maths: [
