@@ -28,7 +28,8 @@ Pour vérifier ou modifier le projet, consulte le [guide de maintenance](docs/ma
   - **Quiz en vol**. Lis la question avant de décoller. Appuie sur Espace ou touche la zone de vol pour battre des ailes et traverse la porte de la bonne réponse. Tu peux aussi choisir directement une réponse avec l’option sans pilotage.
   - **Sprint cérébral**. Tu as 45 secondes pour répondre à une série de questions. Les bonnes réponses consécutives font monter le combo. Le chrono s’arrête pendant les corrections et reprend à la question suivante.
   - **Mémo Duo**. Retourne des cartes pour associer chaque question à sa réponse. Chaque erreur coûte 15 points et les paires trouvées restent visibles.
-- **Pass Focus**. L’XP de tes Pomodoros, flashcards et parties débloque automatiquement 20 paliers répartis en quatre actes. Équipe les récompenses dans le pass ou dans ton vestiaire. Tu peux combiner 44 cosmétiques répartis entre thèmes, avatars, cadres, bannières, titres et traînées. Les avatars et traînées équipés apparaissent dans le Quiz en vol.
+- **Pass Focus**. L’XP de tes Pomodoros, flashcards et parties débloque automatiquement 20 paliers répartis en quatre actes. Équipe les récompenses dans le pass ou dans ton vestiaire. Tu peux combiner 51 cosmétiques répartis entre thèmes, avatars, cadres, bannières, titres et traînées. Les avatars et traînées équipés apparaissent dans le Quiz en vol.
+- **Thèmes du site**. Dans le Pass Focus, ouvre « Voir les thèmes » pour comparer les 14 palettes. Les thèmes changent les couleurs des pages, des menus et de l’Arcade. Tu peux équiper Papier ivoire à 50 XP, Glacier à 400 XP ou Sakura à 1 200 XP si tu préfères un fond clair.
 - **Progression**. Suis ta série de jours, ton temps par matière, ton XP et tes dernières activités.
 
 Les notes, cartes personnelles, chapitres lus, exercices en cours, cosmétiques équipés, records et statistiques sont sauvegardés dans le navigateur utilisé. Garde le même navigateur et la même adresse pour retrouver ta progression. Une adresse locale et une adresse hébergée ont chacune leur sauvegarde.
@@ -44,6 +45,10 @@ La bibliothèque couvre dix matières de Seconde GT. L’anglais et l’espagnol
 ## Ouvrir sur un téléphone du même réseau
 
 Lance le serveur en écoutant sur le réseau local. Dans PowerShell, utilise `$env:HOST = '0.0.0.0'; npm run dev`. Depuis le téléphone connecté au même Wi-Fi, ouvre l’adresse IP locale de l’ordinateur sur le port `4173` pendant que le serveur tourne.
+
+## Publier sur Vercel
+
+Pour partager FocusBro hors de ton réseau, importe le dépôt GitHub dans Vercel et sélectionne la branche qui contient la version à publier comme branche de production. Vercel utilise `vercel.json` pour lancer la compilation et servir `dist/`. Une fois le déploiement prêt, partage le domaine de production affiché par Vercel. [Guide Vercel pour GitHub](https://vercel.com/docs/git/vercel-for-github)
 
 ## Illustration d’accueil
 

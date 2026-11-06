@@ -1,0 +1,89 @@
+/* Chaque palette sert aussi à la miniature correspondante dans le pass. */
+:root, [data-palette] {
+  color-scheme: dark;
+  --base: #101321;
+  --sidebar: #15192a;
+  --surface: #1a1f33;
+  --raised: #222944;
+  --line: color-mix(in srgb, var(--text) 8%, var(--raised));
+  --text: #f2f4ff;
+  --muted: #b5bdd7;
+  --quiet: #aab4d4;
+  --accent: #b9c1ff;
+  --accent-hover: color-mix(in srgb, var(--accent) 72%, white);
+  --accent-ink: #151927;
+  --accent-soft: color-mix(in srgb, var(--accent) 15%, var(--surface));
+  --purple: #c3bcff;
+  --mint: #8ce5c9;
+  --sky: #9ac7ff;
+  --amber: #ffbc81;
+  --rose: #ffa2be;
+  --purple-bg: color-mix(in srgb, var(--purple) 14%, var(--surface));
+  --mint-bg: color-mix(in srgb, var(--mint) 14%, var(--surface));
+  --sky-bg: color-mix(in srgb, var(--sky) 14%, var(--surface));
+  --amber-bg: color-mix(in srgb, var(--amber) 14%, var(--surface));
+  --rose-bg: color-mix(in srgb, var(--rose) 14%, var(--surface));
+  --hero-bg: color-mix(in srgb, var(--accent) 74%, white);
+  --hero-ink: color-mix(in srgb, var(--accent) 16%, #111321);
+  --hero-button: color-mix(in srgb, var(--accent) 26%, #111321);
+  --banner-pattern: #ffffff10;
+}
+
+:is([data-theme='paper'], [data-palette='paper'], [data-theme='glacier'], [data-palette='glacier'], [data-theme='sakura'], [data-palette='sakura']) {
+  color-scheme: light;
+  --line: color-mix(in srgb, var(--text) 20%, var(--raised));
+  --text: #232939;
+  --muted: #465164;
+  --quiet: #4e5a70;
+  --accent-hover: color-mix(in srgb, var(--accent) 84%, black);
+  --accent-ink: white;
+  --purple: #523b94;
+  --mint: #16634d;
+  --sky: #215b95;
+  --amber: #89420c;
+  --rose: #9b3159;
+  --hero-bg: color-mix(in srgb, var(--accent) 24%, var(--surface));
+  --hero-ink: var(--text);
+  --hero-button: var(--accent);
+  --banner-pattern: #1519270d;
+}
+
+:is([data-theme='paper'], [data-palette='paper']) {
+  --base: #f7f1e5; --sidebar: #ede5d3; --surface: #fffaf0; --raised: #f0e8d8; --accent: #2e6155;
+}
+:is([data-theme='mint'], [data-palette='mint']) {
+  --base: #0e1a18; --sidebar: #132420; --surface: #192d28; --raised: #223a32; --accent: #88e8be;
+}
+:is([data-theme='terminal'], [data-palette='terminal']) {
+  --base: #0a100a; --sidebar: #101a0e; --surface: #141f12; --raised: #1b2b17; --accent: #b6ff5d;
+}
+:is([data-theme='coral'], [data-palette='coral']) {
+  --base: #231517; --sidebar: #2d1b1d; --surface: #372125; --raised: #472a2c; --accent: #ffab9c;
+}
+:is([data-theme='glacier'], [data-palette='glacier']) {
+  --base: #eaf2fa; --sidebar: #dae9f7; --surface: #f9fcff; --raised: #e2eef9; --accent: #23558e;
+}
+:is([data-theme='sky'], [data-palette='sky']) {
+  --base: #0e1728; --sidebar: #132039; --surface: #1a2945; --raised: #25385b; --accent: #8dbdff;
+}
+:is([data-theme='magma'], [data-palette='magma']) {
+  --base: #1a100d; --sidebar: #271713; --surface: #352019; --raised: #492a20; --accent: #ff9161;
+}
+:is([data-theme='honey'], [data-palette='honey']) {
+  --base: #211a10; --sidebar: #2a2214; --surface: #362b1a; --raised: #463723; --accent: #ffd478;
+}
+:is([data-theme='sakura'], [data-palette='sakura']) {
+  --base: #faedf3; --sidebar: #f2dfeb; --surface: #fff9fd; --raised: #f6e4ef; --accent: #8c376a;
+}
+:is([data-theme='aurora'], [data-palette='aurora']) {
+  --base: #131e26; --sidebar: #1b2934; --surface: #223643; --raised: #2d4550; --accent: #b6f494;
+}
+:is([data-theme='arcade'], [data-palette='arcade']) {
+  --base: #140e28; --sidebar: #211438; --surface: #2b1a46; --raised: #392356; --accent: #65f6ef;
+}
+:is([data-theme='nebula'], [data-palette='nebula']) {
+  --base: #201226; --sidebar: #2b1932; --surface: #36203e; --raised: #482a51; --accent: #eab0ff;
+}
+:is([data-theme='royal'], [data-palette='royal']) {
+  --base: #160f22; --sidebar: #21152e; --surface: #2e1d40; --raised: #3d2854; --accent: #ffe39b;
+}

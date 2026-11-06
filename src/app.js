@@ -6,7 +6,7 @@ import { focusActivity } from './focus-activities.js'
 import { advanceMathTrack, beginMathTrack, mathContext, recordMathAttempt, skillForCard } from './math-practice.js'
 import { equipCosmetic, equippedCosmetic } from './pass.js'
 import { createState, dayKey, freshTimer, gradeCard, isCourseWorked, levelInfo, mathReviewContext, remainingTime, restoreState, reviewCards, settleTimer, shuffle, storageKey, studyStats } from './study.js'
-import { cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, passView, profileView, progressView, readerView, suggestedChallenge } from './views.js'
+import { cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, passView, profileView, progressView, readerView, suggestedChallenge, themeGalleryView } from './views.js'
 
 const app = document.querySelector('#app')
 const dialog = document.querySelector('#dialog')
@@ -100,13 +100,16 @@ function render({ preserveForm = false, focus } = {}) {
     flashcards: () => flashcardsView(state, study),
     feynman: () => feynmanView(state, challengeId, selectedNote),
     arcade: () => arcade.view(state),
-    pass: () => passView(state),
+    pass: () => routeDetail() === 'themes' ? themeGalleryView(state) : passView(state),
     progression: () => progressView(state),
     profil: () => profileView(state),
   }[page]()
   const theme = equippedCosmetic(state.profile, 'theme')
-  document.documentElement.dataset.theme = theme.id
-  document.documentElement.style.setProperty('--theme-color', theme.visual)
+  const root = document.documentElement
+  if (root.dataset.theme !== theme.id) {
+    root.dataset.theme = theme.id
+    document.querySelector('meta[name="theme-color"]').content = getComputedStyle(root).getPropertyValue('--sidebar').trim()
+  }
   app.innerHTML = layout(state, page, content)
   app.querySelectorAll('main details').forEach((detail, index) => {
     if (openDetails[index]) detail.open = true

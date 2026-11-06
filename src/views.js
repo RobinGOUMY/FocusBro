@@ -528,10 +528,18 @@ export function avatarArt(item, size) {
 
 function cosmeticArt(item) {
   const { type, visual } = item
-  const art = { frame: 'target', banner: 'grid', theme: 'spark', trail: 'flight' }
+  if (type === 'theme') return themePreview(item, 'cosmetic-art')
+  const art = { frame: 'target', banner: 'grid', trail: 'flight' }
   const color = visual.startsWith('#') ? visual : 'var(--accent)'
   const mark = type === 'avatar' ? avatarArt(item, 23) : art[type] ? icon(art[type], 22) : visual
   return `<span class="cosmetic-art" data-kind="${type}" style="--reward-color:${color}" aria-hidden="true">${mark}</span>`
+}
+
+function themePreview(item, variant = '') {
+  return `<span class="theme-preview ${variant}" data-palette="${item.id}" aria-hidden="true">
+    <span class="theme-preview-nav"></span>
+    <span class="theme-preview-main"><i></i><i></i><i></i></span>
+  </span>`
 }
 
 function rewardChoice(item, state, xp) {
@@ -555,7 +563,7 @@ export function passView(state) {
         <h2>${current.title}</h2><p>${next ? `Plus que ${number.format(next.xp - xp)} XP avant le palier ${next.number} · ${next.title}.` : 'Tu as débloqué toutes les récompenses du Pass Focus.'}</p>
         ${bar(progress, 'Progression vers le prochain palier')}
         <div class="pass-meter-caption"><span>${number.format(xp)} XP au total</span><span>${next ? `${number.format(next.xp)} XP pour le prochain palier` : 'Palier final atteint'}</span></div>
-        <div class="toolbar-actions">${button(`Voir ${next ? 'le prochain palier' : 'le dernier palier'} ${icon('arrow', 17)}`, 'jump-to-tier', 'primary', `data-value="${(next ?? current).number}"`)}${link('Ma collection', 'profil', 'secondary')}</div>
+        <div class="toolbar-actions">${button(`Voir ${next ? 'le prochain palier' : 'le dernier palier'} ${icon('arrow', 17)}`, 'jump-to-tier', 'primary', `data-value="${(next ?? current).number}"`)}${link('Voir les thèmes', 'pass/themes', 'secondary')}${link('Ma collection', 'profil', 'secondary')}</div>
       </div>
       <div class="pass-hero-loot"><span class="pass-loot-label">${next ? 'PROCHAIN DÉBLOCAGE' : 'DERNIER PALIER'}</span><div class="pass-loot-art">${(next ?? current).rewards.map(cosmeticArt).join('')}</div><strong>${(next ?? current).rewards.map(item => item.label).join(' + ')}</strong><small>${owned} / ${cosmetics.length} cosmétiques débloqués</small></div>
     </section>
@@ -570,6 +578,23 @@ export function passView(state) {
           ${level.number === 1 ? `<details class="tier-starter"><summary>${level.rewards.length} cosmétiques de départ</summary>${rewards}</details>` : rewards}</li>`
       }).join('')}</ol></section>`).join('')}
     <div class="toolbar-actions pass-footer">${link(`${icon('arcade', 17)} Jouer dans l’Arcade`, 'arcade', 'primary')}${link('Voir mes statistiques', 'progression', 'secondary')}</div>`
+}
+
+export function themeGalleryView(state) {
+  const { xp } = studyStats(state)
+  const themes = cosmetics.filter(item => item.type === 'theme')
+  return `<a class="back-link" href="#pass">${icon('back', 17)} Retour au Pass Focus</a>
+    ${heading('PASS FOCUS', 'Les thèmes du site', 'Choisis une palette pour l’accueil, les cours, le vestiaire et l’Arcade.')}
+    <div class="theme-gallery">${themes.map(item => {
+      const locked = xp < item.xp
+      const active = state.profile.theme === item.id
+      const status = locked ? 'Verrouillé' : active ? 'Équipé' : 'Équiper'
+      const mark = locked ? icon('lock', 16) : active ? icon('check', 16) : ''
+      return `<article class="theme-card panel">
+      ${themePreview(item)}<div class="theme-card-content"><div><h2>${item.label}</h2><p>Palier ${item.level} · ${number.format(item.xp)} XP</p></div>
+        ${button(`${mark} ${status}`, 'reward', 'secondary', `data-type="theme" data-value="${item.id}" aria-label="${status} · ${item.label}" aria-pressed="${active}" ${locked ? 'disabled' : ''}`)}
+      </div></article>`
+    }).join('')}</div>`
 }
 
 export function profileView(state) {
