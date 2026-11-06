@@ -16,9 +16,10 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 
 | Parcours | Vérification |
 | --- | --- |
-| Cours | Marquer un chapitre comme travaillé depuis la liste et un autre depuis sa fiche. Vérifier le filtre « Travaillés », remettre un chapitre à « Pas encore » et retrouver les statuts après rechargement. |
+| Accueil | Vérifier l’objectif du jour et l’accès direct au Pomodoro. Après avoir ouvert un cours, retrouver la lecture dans « À suivre ». En cours de session, vérifier que l’action principale rouvre l’activité. |
+| Cours | Marquer un chapitre comme travaillé depuis la liste et un autre depuis sa fiche. Combiner la recherche avec les filtres d’avancement, remettre un chapitre à « Pas encore » et retrouver les statuts après rechargement. |
 | Maths | Entrer une réponse fausse, lire la correction, comparer les valeurs de la variante suivante et réussir deux variantes de suite. En mode mixte, l’exercice suivant porte sur une autre compétence. |
-| Flashcards | Vérifier que les deux modes de révision sélectionnent les chapitres travaillés, puis ouvrir « Toute la collection ». Vérifier qu’une carte de maths marquée « Difficile » ouvre la reprise ciblée. |
+| Flashcards | Vérifier que les deux modes sélectionnent les chapitres travaillés, puis ouvrir « Toute la collection ». Démarrer une série, vérifier le repli des réglages, retourner une carte et vérifier que la position avance après l’évaluation. Une carte de maths marquée « Difficile » doit ouvrir la reprise ciblée. |
 | Feynman | Enregistrer une explication et un exemple, ouvrir la réponse proposée et recharger pour retrouver le texte. |
 | Focus | Choisir une matière et vérifier que le démarrage ouvre l’activité proposée. Naviguer, suspendre puis reprendre depuis le minuteur flottant et vérifier qu’une réponse en cours reste saisie. Terminer le Pomodoro pour vérifier le gain de 50 XP et le démarrage de la pause depuis une autre page. |
 | Mobile | Ouvrir les écrans modifiés à 320 et 390 pixels de large et vérifier l’accès aux commandes et l’absence de défilement horizontal. |
@@ -28,7 +29,7 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 | Emplacement | Rôle |
 | --- | --- |
 | `index.html`, `src/app.js` | Chargement de l’application, navigation par fragment d’URL et gestion des interactions. |
-| `src/views.js`, `src/style.css` | Vues, formulaires et mise en page mobile. |
+| `src/views.js`, `src/style.css` | Vues, formulaires, navigation et styles adaptatifs. Les variables CSS portent les couleurs, les thèmes et les surfaces. |
 | `src/study.js` | État de départ, minuteur, planification des cartes, XP et statistiques. |
 | `src/focus-activities.js` | Suggestions du Pomodoro selon la matière, les cours lus, les cartes à revoir et les reprises en maths. |
 | `src/course-*.js`, `src/courses.js` | Chapitres par matière, index de cours et génération des identifiants de cartes. |
@@ -42,6 +43,12 @@ Les données d’étude sont stockées dans `localStorage` sous la clé `focusbr
 Le choix explicite d’un chapitre est conservé dans `reading[id].worked`. En l’absence de choix explicite, un chapitre déjà marqué comme lu est considéré comme travaillé. Les révisions par défaut suivent ce périmètre. Les cartes personnelles sans chapitre sont accessibles dans « Toute la collection ».
 
 Le Pomodoro garde l’activité choisie dans `timer.activity`. Le lancement ouvre sa route interne, et les commandes du minuteur fonctionnent indépendamment de la page affichée. Le minuteur flotte sur ordinateur et reste dans l’en-tête fixe sur mobile. Une reprise laisse l’élève sur la page qu’il utilise.
+
+L’accueil déduit ses liens de reprise et son objectif des données existantes. Les filtres de cours et le compteur de la série de flashcards vivent dans l’état de navigation, en mémoire.
+
+La refonte s’appuie sur les exemples publics de Mobbin pour rendre l’action principale et la progression visibles. [Étude des parcours de démarrage](https://mobbin.com/blog/the-long-onboarding-a-study-of-1-460-flows) · [Exemples de navigation et de sélection d’une session](https://mobbin.com/blog/how-to-use-mobbin-mcp)
+
+La police variable Manrope est servie depuis `assets/manrope.woff2` avec sa licence dans `assets/manrope-license.txt`. [Manrope sur Google Fonts](https://fonts.google.com/specimen/Manrope)
 
 Lorsqu’une matière est retirée du catalogue, la progression acquise compte dans les totaux. Les cartes, notes et entrées d’historique de cette matière sont masquées. Une session de focus déjà lancée reprend sous « Autre matière ».
 

@@ -46,6 +46,7 @@ const glyphs = {
   leaf: '<path d="M4 20c2-5 6-7 10-10M5 16C2 6 13 4 21 4c0 9-3 17-13 14"/>',
   message: '<path d="M20 11a7 7 0 0 1-7 7H8l-5 3 1-5a7 7 0 0 1 5-12h4a7 7 0 0 1 7 7Z"/><path d="M8 10h8m-8 4h5"/>',
   trash: '<path d="M4 7h16m-10 0V4h4v3m4 0-1 13H7L6 7m4 4v5m4-5v5"/>',
+  search: '<circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 4 4"/>',
 }
 
 export function icon(name, size = 20) {
@@ -61,6 +62,12 @@ export const pages = [
   { id: 'feynman', name: 'Carnet Feynman', mobile: 'Carnet', icon: 'pen' },
   { id: 'progression', name: 'Progression', icon: 'chart' },
   { id: 'profil', name: 'Personnalisation', icon: 'settings' },
+]
+
+const navGroups = [
+  ['Espace d’étude', ['accueil', 'cours', 'focus']],
+  ['Révisions', ['flashcards', 'exercices', 'feynman']],
+  ['Suivi', ['progression']],
 ]
 
 export const sounds = [
@@ -99,7 +106,7 @@ function heading(kicker, title, description) {
 }
 
 function navItem(page, active, mobile = false) {
-  return `<a class="nav-link${page.id === active ? ' active' : ''}" href="#${page.id}" ${page.id === active ? 'aria-current="page"' : ''}>${icon(page.icon, mobile ? 20 : 19)}<span>${mobile ? page.mobile : page.name}</span></a>`
+  return `<a class="nav-link${page.id === active ? ' active' : ''}" href="#${page.id}" ${page.id === active ? 'aria-current="page"' : ''}><span class="nav-icon">${icon(page.icon, mobile ? 20 : 18)}</span><span>${mobile ? page.mobile : page.name}</span></a>`
 }
 
 export function layout(state, page, content) {
@@ -107,10 +114,10 @@ export function layout(state, page, content) {
   const level = levelInfo(stats.xp)
   const name = escapeHtml(state.profile.name || 'FocusBro')
   const float = floatingTimer(state.timer)
+  const currentPage = pages.find(item => item.id === page)
   return `<aside class="sidebar">
-    <a class="brand" href="#accueil"><img src="./assets/bolt.svg" width="38" height="38" alt=""><span>Focus<span>Bro</span><small>TON QG DE RÉVISION</small></span></a>
-    <div class="nav-caption">ESPACE DE TRAVAIL</div>
-    <nav class="main-nav" aria-label="Navigation principale">${pages.slice(0, -1).map(item => navItem(item, page)).join('')}</nav>
+    <a class="brand" href="#accueil"><img src="./assets/bolt.svg" width="38" height="38" alt=""><span>Focus<span>Bro</span><small>ESPACE DE RÉVISION</small></span></a>
+    <nav class="main-nav" aria-label="Navigation principale">${navGroups.map(([title, ids]) => `<div class="nav-group"><p class="nav-caption">${title}</p>${ids.map(id => navItem(pages.find(item => item.id === id), page)).join('')}</div>`).join('')}</nav>
     <div class="sidebar-bottom">
       <a class="sidebar-level" href="#progression">
         <div class="level-heading">${tile('award', 'purple')}<div><b>${level.current.title}</b><small>Niveau ${level.index + 1}</small></div>${icon('chevron', 16)}</div>
@@ -123,8 +130,9 @@ export function layout(state, page, content) {
   <div class="workspace${float ? ' has-focus-float' : ''}">
     <header class="topbar">
       <a class="brand mobile-brand" href="#accueil"><img src="./assets/bolt.svg" width="34" height="34" alt=""><span>Focus<span>Bro</span></span></a>
-      <span class="today-date">${icon('calendar', 16)} <span>${weekday.format(new Date())}</span></span>
+      <div class="workspace-path">${icon(currentPage.icon, 16)}<span>${currentPage.name}</span></div>
       <div class="top-actions">
+        <span class="today-date">${icon('calendar', 16)} <span>${weekday.format(new Date())}</span></span>
         ${float}
         <a href="#progression" class="xp-pill" title="Voir ma progression">${icon('bolt', 16)} <strong>${number.format(stats.xp)} XP</strong></a>
         <a class="avatar" href="#profil" aria-label="Profil de ${name}" title="Profil de ${name}">${icon(state.profile.avatar, 19)}</a>
@@ -140,50 +148,68 @@ function statCard(symbol, color, label, value, detail) {
 }
 
 function moduleCard(page, symbol, color, title, detail, status) {
-  return `<a href="#${page}" class="module-card panel">${tile(symbol, color)}<span class="module-arrow">${icon('arrow', 18)}</span><h3>${title}</h3><p>${detail}</p><span class="module-status ${color}">${status}</span></a>`
+  return `<a href="#${page}" class="module-card panel">${tile(symbol, color)}<span class="module-arrow">${icon('chevron', 17)}</span><h3>${title}</h3><p>${detail}</p><span class="module-status ${color}">${status}</span></a>`
+}
+
+function nextRow(route, symbol, color, title, detail) {
+  return `<a class="next-row" href="#${escapeHtml(route)}">${tile(symbol, color)}<span><strong>${title}</strong><small>${detail}</small></span>${icon('chevron', 17)}</a>`
+}
+
+function dailyPanel(state, todayMinutes) {
+  const goal = Math.min(1, todayMinutes / dailyGoal)
+  return `<section class="quest panel" aria-labelledby="mission-title">
+    <div class="quest-heading"><div><span class="section-kicker">AUJOURD’HUI</span><h2 id="mission-title">Objectif du jour</h2></div>${tile(goal === 1 ? 'check' : 'target', 'mint')}</div>
+    <div class="goal-content"><div class="goal-ring" style="--goal:${goal * 100}%" role="progressbar" aria-label="Objectif du jour en minutes" aria-valuenow="${Math.min(todayMinutes, dailyGoal)}" aria-valuemin="0" aria-valuemax="${dailyGoal}"><span><strong>${todayMinutes}</strong><small>/ ${dailyGoal} min</small></span></div><div><h3>${goal === 1 ? 'Objectif atteint' : 'Une session suffit'}</h3><p>${goal === 1 ? 'Tu as pris le temps d’avancer aujourd’hui.' : 'Termine un Pomodoro pour atteindre ton objectif.'}</p></div></div>
+    <ul class="goal-week" aria-label="Sessions des sept derniers jours">${weekActivity(state).map(({ date, minutes }, index) => `<li class="${index === 6 ? 'today' : ''}${minutes ? ' done' : ''}" aria-label="${weekday.format(date)} · ${timeLabel(minutes)}"><span>${dayLabel.format(date).slice(0, 1).toUpperCase()}</span><i>${minutes ? icon('check', 12) : ''}</i></li>`).join('')}</ul>
+  </section>`
 }
 
 export function dashboard(state) {
   const stats = studyStats(state)
   const due = reviewCards(state, {}, 'due').length
-  const hasWorked = courses.some(course => isCourseWorked(state, course.id))
+  const worked = courses.filter(course => isCourseWorked(state, course.id)).length
   const noteCount = state.notes.filter(note => hasSubject(note.subject)).length
   const latest = latestCourse(state)
-  const goal = Math.min(1, stats.todayMinutes / dailyGoal)
-  const greeting = state.profile.name ? `Salut, ${escapeHtml(state.profile.name)} !` : 'Ton QG de révision'
-  return `${heading('TABLEAU DE BORD', greeting, 'Un petit effort aujourd’hui, un grand pas pour demain.')}
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-art" aria-hidden="true"></div>
+  const active = state.timer.phase === 'break' || state.timer.status !== 'ready'
+  const greeting = state.profile.name ? `Salut, ${escapeHtml(state.profile.name)} !` : 'Ton espace de révision'
+  const current = state.timer.phase === 'focus' && active && state.timer.activity
+  const next = [
+    latest && current?.route !== `cours/${latest.id}` ? nextRow(`cours/${latest.id}`, 'book', 'sky', 'Reprendre ta lecture', escapeHtml(latest.title)) : '',
+    due ? nextRow('flashcards', 'cards', 'mint', 'Réviser tes flashcards', `${countLabel(due, 'carte')} à revoir`) : '',
+    !worked ? nextRow('cours', 'check', 'mint', 'Indiquer les chapitres vus', 'Tes révisions suivront ton programme.') : '',
+  ].filter(Boolean).slice(0, 2)
+  if (!next.length) next.push(nextRow('cours', 'book', 'sky', 'Revoir tes chapitres', 'Retrouve tes cours dans la bibliothèque.'))
+  return `<div class="dashboard">${heading('TON TABLEAU DE BORD', greeting, 'Retrouve tes cours et choisis ta prochaine activité.')}
+    <div class="dashboard-top"><section class="hero" aria-labelledby="hero-title">
+      <img class="hero-art" src="./assets/focus-illustration.webp" width="680" height="680" alt="" fetchpriority="high">
       <div class="hero-copy">
-        <span class="hero-tag">${icon('spark', 14)} MODE FOCUS</span>
-        <h2 id="hero-title">Prêt à passer au<br><em>niveau supérieur&nbsp;?</em></h2>
-        <p>Une matière, 25 minutes et un objectif. À toi de jouer.</p>
-        <div class="hero-actions">${link(`${icon('play', 18)} ${state.timer.status === 'ready' ? 'Lancer une session' : 'Revenir à la session'} ${icon('arrow', 18)}`, 'focus', 'primary hero-button')}${link(`${icon('book', 17)} Lire un cours`, 'cours', 'hero-course-link')}</div>
+        <span class="hero-tag">${icon('timer', 15)} POMODORO · 25 MIN</span>
+        <h2 id="hero-title">${active ? 'Ta session focus' : '25 minutes pour avancer'}</h2>
+        <p>${current?.route ? escapeHtml(current.title) : active ? 'Retrouve les commandes de ta session.' : 'Choisis une matière, on te propose par quoi commencer.'}</p>
+        ${link(`${icon('play', 17)} ${current?.route ? 'Reprendre l’activité' : active ? 'Revenir à la session' : 'Lancer une session'} ${icon('arrow', 17)}`, current?.route ?? 'focus', 'hero-button')}
       </div>
-    </section>
+    </section>${dailyPanel(state, stats.todayMinutes)}</div>
     <section class="stats-grid" aria-label="Mes statistiques">
-      ${statCard('fire', 'amber', 'Série en cours', countLabel(stats.streak, 'jour'), stats.streak ? 'La régularité paie' : 'Ta série commence aujourd’hui')}
-      ${statCard('clock', 'sky', 'Temps concentré', timeLabel(stats.minutes), 'Toutes matières confondues')}
-      ${statCard('bolt', 'purple', 'XP total', `${number.format(stats.xp)} XP`, 'Gagnés en révisant')}
+      ${statCard('fire', 'amber', 'Série en cours', countLabel(stats.streak, 'jour'), 'Jours de révision consécutifs')}
+      ${statCard('clock', 'sky', 'Temps en focus', timeLabel(stats.minutes), 'Depuis tes débuts')}
+      ${statCard('bolt', 'purple', 'Expérience', `${number.format(stats.xp)} XP`, `Niveau ${levelInfo(stats.xp).current.title}`)}
     </section>
     <div class="dashboard-bottom">
       <section aria-labelledby="modules-title">
-        <div class="section-heading"><h2 id="modules-title">Tes modules</h2><p>Change de méthode selon ce que tu veux travailler.</p></div>
+        <div class="section-heading"><h2 id="modules-title">Tes outils de révision</h2></div>
         <div class="module-grid">
-          ${moduleCard(latest ? `cours/${latest.id}` : 'cours', 'book', 'sky', latest ? 'Reprendre un cours' : 'Bibliothèque de cours', latest ? `Reprends ta lecture de « ${latest.title} ». ` : 'Lis les cours de l’année à ton rythme, avec des exemples et des exercices corrigés.', `${courses.length} chapitres`)}
-          ${moduleCard('flashcards', 'cards', 'purple', 'Flashcards', 'Teste ta mémoire sur les chapitres que tu as travaillés.', due ? `${countLabel(due, 'carte')} à réviser` : hasWorked ? 'À jour' : 'Indiquer mes chapitres')}
-          ${moduleCard('feynman', 'pen', 'mint', 'Carnet Feynman', 'Choisis un défi guidé et explique la notion avec tes mots.', noteCount ? countLabel(noteCount, 'note') : 'Défis guidés')}
+          ${moduleCard('cours', 'book', 'sky', 'Cours', 'Lis et marque les chapitres vus.', `${courses.length} chapitres`)}
+          ${moduleCard('flashcards', 'cards', 'purple', 'Flashcards', 'Retrouve la réponse de mémoire.', due ? `${countLabel(due, 'carte')} à revoir` : 'Rappel actif')}
+          ${moduleCard('exercices', 'math', 'amber', 'Exercices de maths', 'Entraîne-toi avec des variantes.', `${mathSkills.length} types d’exercices`)}
+          ${moduleCard('feynman', 'pen', 'mint', 'Carnet Feynman', 'Explique avec tes propres mots.', noteCount ? countLabel(noteCount, 'note') : 'Défis guidés')}
         </div>
       </section>
-      <section aria-labelledby="mission-title">
-        <div class="section-heading"><h2 id="mission-title">Objectif du jour</h2><p>Une première session suffit.</p></div>
-        <div class="quest panel">
-          <div class="quest-heading">${tile(goal === 1 ? 'check' : 'target', 'mint')}<div><h3>${goal === 1 ? 'Objectif atteint !' : 'Première mission'}</h3><p>${goal === 1 ? 'Bien joué pour aujourd’hui.' : 'Concentre-toi 25 minutes.'}</p></div></div>
-          ${bar(goal, 'Objectif du jour')}
-          <div class="quest-caption"><span>${stats.todayMinutes} / ${dailyGoal} min</span><span>${goal === 1 ? 'Terminé' : '+50 XP par session'}</span></div>
-        </div>
+      <section class="dashboard-next" aria-labelledby="next-title">
+        <div class="section-heading"><h2 id="next-title">À suivre</h2></div>
+        <div class="panel next-panel">${next.join('')}</div>
+        <a class="progress-link" href="#progression">Voir ma progression ${icon('arrow', 16)}</a>
       </section>
-    </div>`
+    </div></div>`
 }
 
 function subjectOptions(selected = '', all = false) {
@@ -234,11 +260,11 @@ export function libraryView(state, subjectId, query, filter) {
   const latest = latestCourse(state)
   const chapters = subject ? courses.filter(course => course.subject === subject.id) : courses
   const worked = chapters.filter(course => isCourseWorked(state, course.id)).length
+  const filters = [['all', 'Tous'], ['worked', 'Travaillés'], ['unworked', 'Pas encore travaillés'], ['done', 'Déjà lus']]
   return `${subject ? '<a class="back-link" href="#cours">' + icon('back', 17) + ' Toutes les matières</a>' : ''}
     ${heading('PROGRAMME DE SECONDE', subject ? subject.name : 'Bibliothèque de cours', subject ? 'Coche les chapitres que tu as déjà vus en classe ou travaillés chez toi.' : 'Ouvre une matière et indique les chapitres que tu as travaillés pour personnaliser tes révisions.')}
-    <section class="panel library-banner"><div>${tile('book', 'sky')}<span><strong>${worked} / ${chapters.length} chapitres travaillés</strong><small>Tes questions de révision partent de cette sélection.</small></span></div>${subject ? (worked ? link(`Réviser cette matière ${icon('arrow', 17)}`, `flashcards/${subject.id}`, 'secondary') : '') : latest ? link(`Reprendre ma lecture ${icon('arrow', 17)}`, `cours/${latest.id}`, 'secondary') : ''}</section>
-    ${!subject || subject.id === 'maths' ? `<section class="panel library-banner math-banner"><div>${tile('math', 'mint')}<span><strong>Entraînement de maths</strong><small>Des exercices différents à chaque essai</small></span></div>${link(`S’entraîner ${icon('arrow', 17)}`, 'exercices', 'secondary')}</section>` : ''}
-    <div class="library-tools"><label class="field"><span>Rechercher un cours</span><input id="course-search" type="search" value="${escapeHtml(query)}" placeholder="Ex. vecteurs, biodiversité, poésie…" autocomplete="off"></label><label class="field"><span id="course-filter-label">Avancement</span><select id="course-filter" aria-labelledby="course-filter-label"><option value="all">Tous les chapitres</option><option value="worked" ${filter === 'worked' ? 'selected' : ''}>Travaillés</option><option value="unworked" ${filter === 'unworked' ? 'selected' : ''}>Pas encore travaillés</option><option value="done" ${filter === 'done' ? 'selected' : ''}>Déjà lus</option></select></label></div>
+    <section class="panel library-banner"><div class="library-progress">${tile('book', 'sky')}<div><strong>${worked} / ${chapters.length} chapitres travaillés</strong><small>Tes questions de révision partent de cette sélection.</small>${bar(worked / Math.max(1, chapters.length), 'Chapitres travaillés')}</div></div><div class="toolbar-actions">${subject ? (worked ? link(`Réviser cette matière ${icon('arrow', 17)}`, `flashcards/${subject.id}`, 'primary') : '') : latest ? link(`Reprendre ma lecture ${icon('arrow', 17)}`, `cours/${latest.id}`, 'primary') : ''}${!subject || subject.id === 'maths' ? link(`${icon('math', 17)} Exercices de maths`, 'exercices', 'secondary') : ''}</div></section>
+    <div class="library-tools"><label class="field"><span>Rechercher un cours</span><span class="search-input">${icon('search', 19)}<input id="course-search" type="search" value="${escapeHtml(query)}" placeholder="Ex. vecteurs, biodiversité, poésie…" autocomplete="off"></span></label><div class="course-filters" id="course-filter" role="group" aria-label="Filtrer par avancement">${filters.map(([value, label]) => button(label, 'course-filter', 'filter-chip', `data-value="${value}" aria-pressed="${filter === value}"`)).join('')}</div></div>
     <section id="course-results" aria-label="Chapitres disponibles">${courseResults(state, subjectId, query, filter)}</section>`
 }
 
@@ -369,6 +395,7 @@ export function flashcardsView(state, study) {
   const availableById = new Map(cards.map(card => [card.id, card]))
   const queue = study.queue.map(id => availableById.get(id)).filter(Boolean)
   const card = queue[0]
+  const total = study.reviewed + queue.length
   const subject = card && subjectById(card.subject)
   const course = courseById.get(study.course)
   const practice = study.mode === 'practice'
@@ -387,12 +414,15 @@ export function flashcardsView(state, study) {
     ? course ? button(`${icon('check', 17)} Marquer le chapitre comme travaillé`, 'mark-worked', 'primary', `data-value="${course.id}"`) : link('Indiquer mes chapitres', courseRoute)
     : link('Voir les cours', courseRoute, 'secondary')
   return `${heading('RAPPEL ACTIF', 'Flashcards', 'Cherche la réponse de mémoire, puis retourne la carte pour te corriger.')}
-    <div class="study-toolbar"><div class="study-filters"><label class="field"><span id="card-subject-label">Matière</span><select id="card-subject" aria-labelledby="card-subject-label">${subjectOptions(study.subject, true)}</select></label><label class="field"><span id="card-scope-label">Chapitres à réviser</span><select id="card-scope" aria-labelledby="card-scope-label"><option value="worked">Chapitres travaillés</option><option value="all" ${worked ? '' : 'selected'}>Toute la collection</option></select></label></div><div class="toolbar-actions">${availableCustomCards(state).length ? button(`${icon('cards', 17)} Mes cartes`, 'manage-cards', 'secondary') : ''}${link(`${icon('book', 17)} ${course ? 'Relire le chapitre' : 'Parcourir les cours'}`, courseRoute, 'secondary')}${!study.subject || study.subject === 'maths' ? link(`${icon('math', 17)} Exercices de maths`, course ? `exercices/${course.id}` : 'exercices', 'secondary') : ''}</div></div>
     ${course ? `<div class="deck-filter"><strong>${course.title}</strong><a href="#flashcards">Voir tous les chapitres ${icon('close', 14)}</a></div>` : ''}
+    <details class="panel review-settings" ${card ? '' : 'open'}><summary>${icon('settings', 17)} Réglages de la révision ${icon('chevron', 16)}</summary>
+    <div class="study-toolbar"><div class="study-filters"><label class="field"><span id="card-subject-label">Matière</span><select id="card-subject" aria-labelledby="card-subject-label">${subjectOptions(study.subject, true)}</select></label><label class="field"><span id="card-scope-label">Chapitres à réviser</span><select id="card-scope" aria-labelledby="card-scope-label"><option value="worked">Chapitres travaillés</option><option value="all" ${worked ? '' : 'selected'}>Toute la collection</option></select></label></div><div class="toolbar-actions">${availableCustomCards(state).length ? button(`${icon('cards', 17)} Mes cartes`, 'manage-cards', 'secondary') : ''}${link(`${icon('book', 17)} ${course ? 'Relire le chapitre' : 'Parcourir les cours'}`, courseRoute, 'secondary')}${!study.subject || study.subject === 'maths' ? link(`${icon('math', 17)} Exercices de maths`, course ? `exercices/${course.id}` : 'exercices', 'secondary') : ''}</div></div>
     <div class="review-modes" aria-label="Mode de révision">${button(`${icon('calendar', 16)} À revoir`, 'review-mode', 'secondary', `data-value="due" aria-pressed="${!practice}"`)}${button(`${icon('rotate', 16)} Entraînement libre`, 'review-mode', 'secondary', `data-value="practice" aria-pressed="${practice}"`)}</div>
+    </details>
     <div class="focus-layout">
       <section class="panel study-panel" aria-label="Révision des cartes">
-        ${card ? `<div class="deck-header"><span class="subject-tag ${subject.color}">${icon(subject.icon, 15)} ${subject.name}</span><span>${countLabel(queue.length, 'carte restante', 'cartes restantes')}</span></div>
+        ${card ? `<div class="deck-header"><span class="subject-tag ${subject.color}">${icon(subject.icon, 15)} ${subject.name}</span><span>Carte ${study.reviewed + 1} sur ${total}</span></div>
+        ${bar(study.reviewed / total, 'Progression de la série')}
         <button class="flashcard ${study.flipped ? 'revealed' : ''}" type="button" data-action="flip-card" aria-pressed="${study.flipped}"><span class="card-face">${study.flipped ? 'VERSO · RÉPONSE' : 'RECTO · QUESTION'}</span><span class="flashcard-text">${escapeHtml(study.flipped ? card.answer : card.question)}</span><span class="flip-hint">${icon('rotate', 16)} ${study.flipped ? 'Revoir la question' : 'Retourner la carte'}</span></button>
         ${study.flipped ? `<p class="rating-hint">Comment s’est passé le rappel ?</p><div class="ratings">${button(`${icon('close', 17)} Difficile`, 'grade-card', 'rating hard', 'data-value="hard"')}${button(`${icon('minus', 17)} Moyen`, 'grade-card', 'rating medium', 'data-value="medium"')}${button(`${icon('check', 17)} Facile`, 'grade-card', 'rating easy', 'data-value="easy"')}</div>${skillForCard(card) ? '<p class="rating-hint">« Difficile » et « Moyen » ouvrent tout de suite un exercice du même type.</p>' : ''}` : '<p class="rating-hint">Essaie de formuler la réponse avant de la lire.</p>'}`
         : `<div class="empty-state">${tile(study.started ? 'check' : 'cards', 'purple')}<h2>${title}</h2><p>${cards.length ? `${countLabel(cards.length, 'carte')} ${practice ? 'dans la collection' : 'à revoir'}. Lance une série de ${Math.min(10, cards.length)}.` : nextReview}</p>${cards.length ? button(`${icon('play', 17)} ${study.started ? 'Relancer une série' : 'Commencer la révision'}`, 'start-review') : deck.length && !practice ? button(`${icon('rotate', 17)} Continuer en entraînement libre`, 'review-mode', 'primary', 'data-value="practice"') : emptyAction}</div>`}

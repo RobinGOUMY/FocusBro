@@ -8,13 +8,14 @@ const types = {
   '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
+  '.woff2': 'font/woff2',
 }
 const port = Number(process.env.PORT ?? 4173)
 
 createServer(async (request, response) => {
   const path = request.url.split('?')[0]
   const file = path === '/' ? '/index.html' : path
-  if (!/^\/(?:index\.html|(?:src|assets)\/[a-zA-Z0-9-]+\.[a-z]+)$/.test(file) || !types[extname(file)]) {
+  if (!/^\/(?:index\.html|(?:src|assets)\/[a-zA-Z0-9-]+\.[a-z0-9]+)$/.test(file) || !types[extname(file)]) {
     response.writeHead(404).end('Introuvable')
     return
   }

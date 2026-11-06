@@ -9,7 +9,7 @@ import { cardForm, courseResults, customCardList, dashboard, escapeHtml, flashca
 const app = document.querySelector('#app')
 const dialog = document.querySelector('#dialog')
 const toast = document.querySelector('#toast')
-const study = { subject: '', course: '', mode: 'due', scope: 'worked', queue: [], started: false, flipped: false }
+const study = { subject: '', course: '', mode: 'due', scope: 'worked', queue: [], started: false, flipped: false, reviewed: 0 }
 const library = { subject: '', query: '', filter: 'all' }
 const pageFromUrl = () => pages.find(page => page.id === location.hash.slice(1).split('/')[0])?.id ?? 'accueil'
 const routeDetail = () => location.hash.split('/')[1] ?? ''
@@ -262,7 +262,7 @@ function stopTimer() {
 }
 
 function resetReview(selection = {}) {
-  Object.assign(study, { queue: [], started: false, flipped: false }, selection)
+  Object.assign(study, { queue: [], started: false, flipped: false, reviewed: 0 }, selection)
 }
 
 function syncReviewQueue() {
@@ -324,6 +324,7 @@ async function reviewCard(grade) {
     return { xp: gradeCard(next, card, grade), due: next.schedule[card.id].due }
   })
   study.queue = study.queue.filter(queued => queued !== id)
+  if (outcome) study.reviewed += 1
   if (outcome?.mathSkill) {
     location.hash = `exercices/${outcome.mathSkill}/cartes/${selection.course || selection.subject || 'toutes'}`
     return
@@ -410,6 +411,13 @@ const actions = {
     resetReview({ mode: value })
     render({ focus: `[data-action="review-mode"][data-value="${value}"]` })
   },
+  'course-filter': ({ value }) => {
+    library.filter = value
+    for (const filter of app.querySelectorAll('[data-action="course-filter"]')) {
+      filter.setAttribute('aria-pressed', String(filter.dataset.value === value))
+    }
+    document.querySelector('#course-results').innerHTML = courseResults(state, library.subject, library.query, library.filter)
+  },
   'mark-worked': async ({ value }) => {
     if (!courseById.has(value)) return
     const worked = await commit(next => {
@@ -420,7 +428,7 @@ const actions = {
     syncReviewQueue()
     render({ preserveForm: true })
     const toggle = app.querySelector(`[data-action="mark-worked"][data-value="${value}"]`)
-    const fallback = page === 'flashcards' ? app.querySelector('[data-action="start-review"]') ?? app.querySelector('#card-scope') : app.querySelector('#course-filter')
+    const fallback = page === 'flashcards' ? app.querySelector('[data-action="start-review"]') ?? app.querySelector('#card-scope') : app.querySelector('#course-filter [aria-pressed="true"]')
     const control = toggle ?? fallback
     control?.focus({ preventScroll: true })
     notify(worked === 'added' ? 'Chapitre ajouté à tes révisions' : 'Chapitre marqué « Pas encore »')
@@ -517,9 +525,6 @@ app.addEventListener('change', async event => {
   } else if (id === 'card-scope') {
     resetReview({ scope: value })
     render({ focus: '#card-scope' })
-  } else if (id === 'course-filter') {
-    library.filter = value
-    document.querySelector('#course-results').innerHTML = courseResults(state, library.subject, library.query, library.filter)
   } else if (id === 'challenge-course') {
     location.hash = `feynman/${value}`
   } else if (id === 'math-context') {
