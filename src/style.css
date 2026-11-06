@@ -230,6 +230,10 @@ button, a, input, select, textarea { outline-offset: 4px; }
 .empty-state .btn { margin-top: 4px; }
 .stack-form { display: grid; justify-items: stretch; gap: 13px; }
 .stack-form > .btn { justify-self: start; }
+.account-link { margin-left: 12px; }
+.account-panel { margin-bottom: 14px; }
+dialog .account-error { color: var(--rose); }
+.account-error:empty { display: none; }
 .form-row { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 9px; }
 .toggle-field { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
 .toggle-field input { width: 17px; height: 17px; accent-color: var(--accent); }

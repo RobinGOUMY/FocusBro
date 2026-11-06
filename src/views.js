@@ -217,6 +217,7 @@ export function dashboard(state) {
         <div class="section-heading"><h2 id="next-title">À suivre</h2></div>
         <div class="panel next-panel">${next.join('')}</div>
         <a class="progress-link" href="#progression">Voir ma progression ${icon('arrow', 16)}</a>
+        <a class="progress-link account-link" href="#profil">Mon compte ${icon('arrow', 16)}</a>
       </section>
     </div></div>`
 }
@@ -597,7 +598,39 @@ export function themeGalleryView(state) {
     }).join('')}</div>`
 }
 
-export function profileView(state) {
+export function accountPanel({ account, status }) {
+  const messages = {
+    pending: 'Synchronisation en cours…',
+    saved: 'Progression sauvegardée en ligne.',
+    offline: 'Synchronisation indisponible. Tes changements restent sur cet appareil en attendant.',
+    reconnect: 'Reconnecte-toi pour retrouver la synchronisation.',
+    conflict: 'Cet appareil et ton compte ont chacun une version différente. Choisis celle que tu veux garder.',
+    invalid: 'La synchronisation a été refusée. Ta progression reste sur cet appareil.',
+  }
+  return `<section id="account-panel" class="panel padded account-panel">
+    <div class="panel-title">${tile('lock', 'mint')}<div><h2>${account ? `Compte ${escapeHtml(account)}` : 'Mon compte'}</h2>
+    <p role="status">${account ? messages[status] : 'Sauvegarde ta progression et retrouve-la sur un autre appareil.'}</p></div></div>
+    <div class="toolbar-actions">${!account
+      ? `${button('Créer un compte', 'account-form', 'primary', 'data-value="register"')}${button('Se connecter', 'account-form', 'secondary', 'data-value="login"')}`
+      : status === 'conflict'
+        ? `${button('Garder la version en ligne', 'account-resolve', 'secondary', 'data-value="remote"')}${button('Garder cet appareil', 'account-resolve', 'secondary', 'data-value="local"')}`
+        : `${status === 'reconnect' ? button('Se reconnecter', 'account-form', 'primary', 'data-value="login"') : button('Synchroniser maintenant', 'account-sync', 'secondary')}${button('Se déconnecter', 'account-logout', 'secondary')}`}</div>
+  </section>`
+}
+
+export function accountForm(registration, account) {
+  return `<form id="account-form" class="stack-form" data-action-type="${registration ? 'register' : 'login'}">
+    ${registration ? '<p>La progression de ce navigateur sera copiée dans ton nouveau compte.</p>' : ''}
+    <label class="field"><span>Pseudo du compte</span><input name="username" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="24" required value="${escapeHtml(account ?? '')}" ${account ? 'readonly' : ''}>
+      ${registration ? '<small>3 à 24 caractères. Lettres sans accents, chiffres, points, tirets ou traits bas.</small>' : ''}</label>
+    <label class="field"><span>Mot de passe</span><input name="password" type="password" autocomplete="${registration ? 'new-password' : 'current-password'}" minlength="12" maxlength="128" required>
+      ${registration ? '<small>12 caractères minimum. Garde-le dans ton gestionnaire de mots de passe.</small>' : ''}</label>
+    <p class="account-error" role="alert"></p>
+    <button type="submit" class="btn primary">${registration ? 'Créer mon compte' : 'Me connecter'}</button>
+  </form>`
+}
+
+export function profileView(state, account) {
   const { xp } = studyStats(state)
   const name = escapeHtml(state.profile.name || 'FocusBro')
   const avatar = equippedCosmetic(state.profile, 'avatar')
@@ -608,12 +641,13 @@ export function profileView(state) {
   const unlocked = cosmetics.filter(item => item.xp <= xp)
   const categories = { theme: 'Thèmes', avatar: 'Avatars', frame: 'Cadres', banner: 'Bannières', trail: 'Traînées', title: 'Titres' }
   return `${heading('PERSONNALISATION', 'Ton vestiaire', 'Mélange les cosmétiques débloqués avec le Pass Focus.')}
+    ${accountPanel(account)}
     <div class="progress-grid profile-overview">
       <section class="profile-banner panel" data-design="${banner.id}" style="--banner-color:${banner.visual}" aria-label="Aperçu du profil">
         <div class="profile-showcase"><span class="profile-frame" data-frame="${frame.id}" style="--frame-color:${frame.visual}">${avatarArt(avatar, 39)}</span><div><h2>${name}</h2><p>${title.visual} ${title.label}</p></div></div>
         <div class="profile-flight-preview" style="--trail-color:${trail.visual}">${icon('flight', 23)} <span>${trail.label} en vol</span></div>
       </section>
-      <section class="panel padded"><div class="panel-title">${tile('settings', 'purple')}<div><h2>Préférences</h2><p>Enregistrées dans ce navigateur.</p></div></div><form id="profile-form" class="stack-form"><label class="field"><span>Prénom ou pseudo</span><input name="name" placeholder="FocusBro" maxlength="24" value="${escapeHtml(state.profile.name)}"></label><label class="toggle-field"><input type="checkbox" name="chime" ${state.profile.chime ? 'checked' : ''}> Jouer un son à la fin d’une session</label><button type="submit" class="btn primary">${icon('check', 17)} Enregistrer</button></form></section>
+      <section class="panel padded"><div class="panel-title">${tile('settings', 'purple')}<div><h2>Préférences</h2><p>${account.account ? 'Enregistrées dans ton compte.' : 'Enregistrées dans ce navigateur.'}</p></div></div><form id="profile-form" class="stack-form"><label class="field"><span>Prénom ou pseudo</span><input name="name" placeholder="FocusBro" maxlength="24" value="${escapeHtml(state.profile.name)}"></label><label class="toggle-field"><input type="checkbox" name="chime" ${state.profile.chime ? 'checked' : ''}> Jouer un son à la fin d’une session</label><button type="submit" class="btn primary">${icon('check', 17)} Enregistrer</button></form></section>
     </div>
     <div class="collection-heading"><div><h2>Ma collection</h2><p>${unlocked.length} / ${cosmetics.length} cosmétiques débloqués</p></div>${link(`${icon('gift', 17)} Voir le Pass Focus`, 'pass', 'secondary')}</div>
     <div class="collection-grid">${Object.entries(categories).map(([type, label]) => {

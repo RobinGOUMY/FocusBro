@@ -11,10 +11,11 @@ Installe Git et Node.js 20 ou plus récent, puis exécute ces commandes dans un 
 ```sh
 git clone https://github.com/RobinGOUMY/FocusBro.git
 cd FocusBro
+npm ci
 npm run dev
 ```
 
-Ouvre [FocusBro en local](http://127.0.0.1:4173/). Les modules intégrés à Node.js suffisent pour lancer le serveur. Pour relancer FocusBro plus tard, ouvre un terminal dans le dossier `FocusBro` et exécute `npm run dev`.
+Ouvre [FocusBro en local](http://127.0.0.1:4173/). Pour relancer FocusBro plus tard, ouvre un terminal dans le dossier `FocusBro` et exécute `npm run dev`. La sauvegarde en ligne demande une base configurée. [Configuration de la base](docs/maintenance.md#comptes-et-sauvegarde)
 
 Pour vérifier ou modifier le projet, consulte le [guide de maintenance](docs/maintenance.md). `npm run check` vérifie le code et `npm run build` prépare les fichiers statiques dans `dist/`.
 
@@ -34,7 +35,11 @@ Pour vérifier ou modifier le projet, consulte le [guide de maintenance](docs/ma
 - **Thèmes du site**. Dans le Pass Focus, ouvre « Voir les thèmes » pour comparer les 14 palettes. Les thèmes changent les couleurs des pages, des menus et de l’Arcade. Tu peux équiper Papier ivoire à 50 XP, Glacier à 400 XP ou Sakura à 1 200 XP si tu préfères un fond clair.
 - **Progression**. Suis ta série de jours, ton temps par matière, ton XP et tes dernières activités.
 
-Les notes, cartes personnelles, chapitres lus, exercices en cours, cosmétiques équipés, records et statistiques sont sauvegardés dans le navigateur utilisé. Garde le même navigateur et la même adresse pour retrouver ta progression. Une adresse locale et une adresse hébergée ont chacune leur sauvegarde.
+## Créer un compte et retrouver sa progression
+
+Ouvre **Mon compte → Créer un compte**. Choisis un pseudo et un mot de passe de 12 caractères ou plus. FocusBro copie la progression déjà présente dans ce navigateur vers le nouveau compte. Sur un autre appareil, ouvre la même adresse et connecte-toi avec ce pseudo pour récupérer tes notes, tes cartes, tes cours travaillés, ton XP et tes cosmétiques. Garde ton mot de passe dans un gestionnaire, car la récupération par e-mail n’est pas disponible.
+
+La synchronisation se fait automatiquement. Dans **Mon compte**, vérifie que la progression est sauvegardée en ligne avant de changer d’appareil. Si deux appareils ont des versions différentes, FocusBro te propose de choisir celle à garder. En mode invité, la sauvegarde reste dans le navigateur et sur l’adresse utilisés.
 
 ## Contenu pédagogique
 

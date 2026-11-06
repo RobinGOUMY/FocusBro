@@ -1,12 +1,13 @@
 import { setAmbience, setVolume, unlockAudio, chime } from './audio.js'
 import { createArcade } from './arcade-controller.js'
+import { createCloudSave } from './cloud-save.js'
 import { hasSubject } from './content.js'
 import { courseById } from './courses.js'
 import { focusActivity } from './focus-activities.js'
 import { advanceMathTrack, beginMathTrack, mathContext, recordMathAttempt, skillForCard } from './math-practice.js'
 import { equipCosmetic, equippedCosmetic } from './pass.js'
 import { createState, dayKey, freshTimer, gradeCard, isCourseWorked, levelInfo, mathReviewContext, remainingTime, restoreState, reviewCards, settleTimer, shuffle, storageKey, studyStats } from './study.js'
-import { cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, passView, profileView, progressView, readerView, suggestedChallenge, themeGalleryView } from './views.js'
+import { accountForm, accountPanel, cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, passView, profileView, progressView, readerView, suggestedChallenge, themeGalleryView } from './views.js'
 
 const app = document.querySelector('#app')
 const dialog = document.querySelector('#dialog')
@@ -32,11 +33,16 @@ let lastDay = dayKey()
 let dialogTrigger
 let confirmAction
 const arcade = createArcade({ app, getState: () => state, render, commit, createId })
+const cloud = createCloudSave({
+  getState: () => state,
+  onState: () => refreshState({ preserveForm: Boolean(document.activeElement?.closest('#note-form, #profile-form, #math-form')) }),
+  onStatus: updateAccountPanel,
+})
 
 function readState() {
   try {
-    const stored = localStorage.getItem(storageKey)
-    return stored ? restoreState(JSON.parse(stored)) : null
+    const stored = cloud.read()
+    return stored ? restoreState(stored) : null
   } catch {
     persistenceFailed = true
     return null
@@ -45,6 +51,7 @@ function readState() {
 
 async function commit(change) {
   const operation = () => {
+    if (!cloud.current()) return false
     const next = (persistenceFailed ? null : readState()) ?? state
     const previousLevel = levelInfo(studyStats(next).xp).index
     const finished = settleTimer(next)
@@ -56,7 +63,7 @@ async function commit(change) {
     }
     if (finished || result !== false) {
       try {
-        localStorage.setItem(storageKey, JSON.stringify(state))
+        cloud.save(state)
         persistenceFailed = false
       } catch {
         if (!persistenceFailed) notify('La sauvegarde est indisponible dans ce navigateur.')
@@ -102,7 +109,7 @@ function render({ preserveForm = false, focus } = {}) {
     arcade: () => arcade.view(state),
     pass: () => routeDetail() === 'themes' ? themeGalleryView(state) : passView(state),
     progression: () => progressView(state),
-    profil: () => profileView(state),
+    profil: () => profileView(state, cloud.info()),
   }[page]()
   const theme = equippedCosmetic(state.profile, 'theme')
   const root = document.documentElement
@@ -132,6 +139,14 @@ function render({ preserveForm = false, focus } = {}) {
   if (focus) app.querySelector(focus)?.focus({ preventScroll: true })
   arcade.sync()
   updateClock()
+}
+
+function updateAccountPanel() {
+  const panel = app.querySelector('#account-panel')
+  if (!panel) return
+  const active = panel.contains(document.activeElement) && document.activeElement.dataset.action
+  panel.outerHTML = accountPanel(cloud.info())
+  if (active) app.querySelector(`#account-panel [data-action="${active}"]`)?.focus({ preventScroll: true })
 }
 
 function updateClock() {
@@ -389,6 +404,18 @@ function deleteNote(id) {
 
 const actions = {
   ...arcade.actions,
+  'account-form': ({ value }) => {
+    const registration = value === 'register'
+    showDialog(registration ? 'Créer un compte' : 'Se connecter', accountForm(registration, cloud.info().account))
+  },
+  'account-sync': () => cloud.sync(),
+  'account-logout': async () => {
+    try { await cloud.logout() } catch (error) { notify(error.message) }
+  },
+  'account-resolve': ({ value }) => {
+    const local = value === 'local'
+    confirm('Choisir la sauvegarde', local ? 'La progression de cet appareil remplacera la version en ligne.' : 'La version en ligne remplacera la progression de cet appareil.', 'Confirmer', () => cloud.resolve(local))
+  },
   'start-timer': startTimer,
   'pause-timer': pauseTimer,
   'stop-timer': stopTimer,
@@ -543,6 +570,16 @@ app.addEventListener('change', async event => {
 })
 
 const forms = {
+  'account-form': async (form, values) => {
+    const errorMessage = form.querySelector('[role="alert"]')
+    errorMessage.textContent = ''
+    try {
+      await cloud.authenticate(form.dataset.actionType, values.username, values.password)
+      dialog.close()
+    } catch (error) {
+      errorMessage.textContent = error.status ? error.message : 'Connexion indisponible. Réessaie dans quelques instants.'
+    }
+  },
   'math-form': (form, values) => submitMath(Object.values(values), form.dataset.id),
   'note-form': async (form, values) => {
     const course = courseById.get(form.dataset.course)
@@ -592,7 +629,7 @@ document.addEventListener('submit', async event => {
   const form = event.target
   if (!forms[form.id]) return
   event.preventDefault()
-  const values = Object.fromEntries([...new FormData(form)].map(([key, value]) => [key, value.trim()]))
+  const values = Object.fromEntries([...new FormData(form)].map(([key, value]) => [key, key === 'password' ? value : value.trim()]))
   const submit = form.querySelector('[type="submit"]')
   submit.disabled = true
   try {
@@ -664,8 +701,7 @@ function needsMathTrack(context) {
   return context.options.length > 0 && !context.options.some(skill => skill.id === current?.skill)
 }
 
-window.addEventListener('storage', async event => {
-  if (event.key !== storageKey) return
+async function refreshState({ preserveForm = true } = {}) {
   const previousTimer = state.timer
   state = readState() ?? createState()
   if (previousTimer.id && previousTimer.id !== state.timer.id && page !== 'focus') {
@@ -685,7 +721,11 @@ window.addEventListener('storage', async event => {
       exerciseContext = mathReviewContext(state)
     }
   }
-  render({ preserveForm: true })
+  render({ preserveForm })
+}
+
+window.addEventListener('storage', event => {
+  if (cloud.storageChanged(event.key)) void refreshState()
 })
 
 state = readState() ?? state
@@ -694,3 +734,9 @@ if (persistenceFailed) notify('La sauvegarde est indisponible dans ce navigateur
 void tick()
 setInterval(tick, 250)
 document.addEventListener('visibilitychange', tick)
+void cloud.sync()
+window.addEventListener('online', cloud.sync)
+document.addEventListener('visibilitychange', cloud.sync)
+setInterval(() => {
+  if (!document.hidden && cloud.info().account) void cloud.sync()
+}, 30_000)
