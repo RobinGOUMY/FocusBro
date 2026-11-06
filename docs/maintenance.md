@@ -20,7 +20,7 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 | Maths | Entrer une réponse fausse, lire la correction, comparer les valeurs de la variante suivante et réussir deux variantes de suite. En mode mixte, l’exercice suivant porte sur une autre compétence. |
 | Flashcards | Vérifier qu’une carte de maths fournie marquée « Difficile » ouvre la reprise ciblée. Vérifier sur une autre matière que le rappel espacé conserve sa date après un passage en entraînement libre. |
 | Feynman | Enregistrer une explication et un exemple, ouvrir la réponse proposée et recharger pour retrouver le texte. |
-| Focus | Interrompre une session pour vérifier l’absence d’XP, puis terminer un Pomodoro et vérifier le gain de 50 XP ainsi que le passage en pause. |
+| Focus | Choisir une matière et vérifier que le démarrage ouvre l’activité proposée. Naviguer, suspendre puis reprendre depuis le minuteur flottant et vérifier qu’une réponse en cours reste saisie. Terminer le Pomodoro pour vérifier le gain de 50 XP et le démarrage de la pause depuis une autre page. |
 | Mobile | Ouvrir les écrans modifiés à 320 et 390 pixels de large et vérifier l’accès aux commandes et l’absence de défilement horizontal. |
 
 ## Structure
@@ -30,6 +30,7 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 | `index.html`, `src/app.js` | Chargement de l’application, navigation par fragment d’URL et gestion des interactions. |
 | `src/views.js`, `src/style.css` | Vues, formulaires et mise en page mobile. |
 | `src/study.js` | État de départ, minuteur, planification des cartes, XP et statistiques. |
+| `src/focus-activities.js` | Suggestions du Pomodoro selon la matière, les cours lus, les cartes à revoir et les reprises en maths. |
 | `src/course-*.js`, `src/courses.js` | Chapitres par matière, index de cours et génération des identifiants de cartes. |
 | `src/math-numbers.js`, `src/math-topics.js` | Types d’exercices de maths, valeurs variables, indices et corrections. |
 | `src/math-practice.js`, `src/math-problem.js` | Sélection des variantes, reprises ciblées et vérification des réponses numériques ou à choix. |
@@ -37,6 +38,8 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 | `server.mjs`, `build.mjs` | Serveur local et préparation du site statique. |
 
 Les données d’étude sont stockées dans `localStorage` sous la clé `focusbro:v1`. Lorsqu’un champ est ajouté, complète l’état de départ et vérifie le chargement d’une sauvegarde antérieure. Conserve les identifiants utilisés dans les sauvegardes et les liens vers les cours.
+
+Le Pomodoro garde l’activité choisie dans `timer.activity`. Le lancement ouvre sa route interne, et les commandes du minuteur fonctionnent indépendamment de la page affichée. Le minuteur flotte sur ordinateur et reste dans l’en-tête fixe sur mobile. Une reprise laisse l’élève sur la page qu’il utilise.
 
 Lorsqu’une matière est retirée du catalogue, la progression acquise compte dans les totaux. Les cartes, notes et entrées d’historique de cette matière sont masquées. Une session de focus déjà lancée reprend sous « Autre matière ».
 

@@ -1,8 +1,9 @@
 import { setAmbience, setVolume, unlockAudio, chime } from './audio.js'
 import { hasSubject } from './content.js'
 import { courseById } from './courses.js'
+import { focusActivity } from './focus-activities.js'
 import { advanceMathTrack, beginMathTrack, mathContext, recordMathAttempt, skillForCard } from './math-practice.js'
-import { createState, dayKey, durations, freshTimer, gradeCard, levelInfo, remainingTime, restoreState, reviewCards, settleTimer, storageKey, studyStats } from './study.js'
+import { createState, dayKey, freshTimer, gradeCard, levelInfo, remainingTime, restoreState, reviewCards, settleTimer, storageKey, studyStats } from './study.js'
 import { cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, profileView, progressView, readerView, suggestedChallenge } from './views.js'
 
 const app = document.querySelector('#app')
@@ -21,6 +22,7 @@ let currentCourse
 let exerciseContext = mathContext()
 let returnToCards = ''
 let sound = 'off'
+let focusChoice = ''
 let toastTimeout
 let timerCheck = false
 let persistenceFailed = false
@@ -86,11 +88,12 @@ function snapshotForm() {
 
 function render({ preserveForm = false, focus } = {}) {
   const draft = preserveForm ? snapshotForm() : null
+  const openDetails = preserveForm ? [...app.querySelectorAll('main details')].map(detail => detail.open) : []
   const content = {
     accueil: () => dashboard(state),
     cours: () => currentCourse ? readerView(state, currentCourse) : libraryView(state, library.subject, library.query, library.filter),
     exercices: () => mathView(state, exerciseContext, returnToCards),
-    focus: () => focusView(state, sound),
+    focus: () => focusView(state, sound, focusChoice),
     flashcards: () => flashcardsView(state, study),
     feynman: () => feynmanView(state, challengeId, selectedNote),
     progression: () => progressView(state),
@@ -98,6 +101,9 @@ function render({ preserveForm = false, focus } = {}) {
   }[page]()
   document.documentElement.dataset.theme = state.profile.theme
   app.innerHTML = layout(state, page, content)
+  app.querySelectorAll('main details').forEach((detail, index) => {
+    if (openDetails[index]) detail.open = true
+  })
   if (draft) {
     const form = document.getElementById(draft.id)
     if (form && form.dataset.id === draft.note && form.dataset.course === draft.course) {
@@ -124,7 +130,6 @@ function updateClock() {
   app.querySelectorAll('[data-live-timer]').forEach(element => {
     if (element.textContent !== time) element.textContent = time
   })
-  app.querySelector('.dial-progress')?.style.setProperty('stroke-dashoffset', 100 * (1 - remaining / durations[timer.phase]))
   const title = timer.status === 'running' ? `${time} · ${timer.phase === 'focus' ? 'Focus' : 'Pause'} · FocusBro` : 'FocusBro · Ton QG de révision'
   if (document.title !== title) document.title = title
 }
@@ -191,23 +196,45 @@ dialog.addEventListener('close', () => {
 })
 
 async function startTimer() {
-  const timer = state.timer
-  const subject = app.querySelector('#timer-subject').value
-  if (timer.phase === 'focus' && !hasSubject(subject)) {
-    app.querySelector('#timer-subject').focus()
+  const { status, phase, id, subject: savedSubject } = state.timer
+  if (status === 'running') return
+  const opening = status === 'ready' && phase === 'focus'
+  const field = app.querySelector('#timer-subject')
+  const subject = opening ? field?.value : savedSubject
+  if (opening && !hasSubject(subject)) {
+    field?.focus()
     notify('Choisis la matière de ta session.')
     return
   }
+  const choice = focusChoice
   unlockAudio()
-  await commit(next => {
+  const started = await commit(next => {
     const current = next.timer
-    if (current.status !== timer.status || current.phase !== timer.phase || current.id !== timer.id) return false
+    if (current.status !== status || current.phase !== phase || current.id !== id) return false
     current.subject = subject
+    if (opening) {
+      current.activity = focusActivity(next, choice)
+      if (current.activity.kind === 'exercise') {
+        const context = mathContext(current.activity.route.split('/')[1])
+        const track = next.mathPractice.tracks[context.key]
+        if (track?.result) advanceMathTrack(next.mathPractice, context, track.current)
+      }
+    }
     current.id ??= createId()
     current.endsAt = Date.now() + current.remaining
     current.status = 'running'
+    return true
   })
-  render({ focus: '[data-action="pause-timer"]' })
+  if (started && opening && openFocusActivity(true)) return
+  render({ preserveForm: true, focus: '.focus-float [data-action="pause-timer"]' })
+}
+
+function openFocusActivity(newSession = false) {
+  const activity = state.timer.phase === 'focus' && focusActivity(state, focusChoice)
+  if (!activity?.route) return false
+  if (newSession && activity.kind === 'cards') resetReview({ subject: '', course: '' })
+  location.hash = activity.route
+  return true
 }
 
 async function pauseTimer() {
@@ -218,7 +245,7 @@ async function pauseTimer() {
     next.timer.endsAt = null
     next.timer.status = 'paused'
   })
-  render({ focus: '[data-action="start-timer"]' })
+  render({ preserveForm: true, focus: '.focus-float [data-action="start-timer"]' })
 }
 
 function stopTimer() {
@@ -248,7 +275,7 @@ function shuffle(cards) {
   return cards
 }
 
-function startReview() {
+function prepareReview() {
   const available = reviewCards(state, study)
   let cards = available
   if (study.mode === 'practice') cards = shuffle(available)
@@ -258,6 +285,10 @@ function startReview() {
     cards = [...scheduled, ...shuffle(unseen)]
   }
   resetReview({ started: true, queue: cards.slice(0, 10).map(card => card.id) })
+}
+
+function startReview() {
+  prepareReview()
   render({ focus: '[data-action="flip-card"]' })
 }
 
@@ -287,7 +318,7 @@ async function reviewCard(grade) {
   })
   study.queue = study.queue.filter(queued => queued !== id)
   if (outcome?.mathSkill) {
-    location.hash = `exercices/${outcome.mathSkill}/cartes/${selection.course || 'toutes'}`
+    location.hash = `exercices/${outcome.mathSkill}/cartes/${selection.course || selection.subject || 'toutes'}`
     return
   }
   render({ focus: '[data-action="flip-card"], .empty-state .btn' })
@@ -351,6 +382,7 @@ const actions = {
   'start-timer': startTimer,
   'pause-timer': pauseTimer,
   'stop-timer': stopTimer,
+  'open-focus-activity': () => openFocusActivity(),
   'skip-break': async () => {
     await commit(next => {
       if (next.timer.phase !== 'break' || next.timer.status !== 'ready') return false
@@ -444,12 +476,20 @@ app.addEventListener('input', event => {
 app.addEventListener('change', async event => {
   const { id, value } = event.target
   if (id === 'timer-subject') {
-    await commit(next => {
-      if (next.timer.status !== 'ready') return false
+    const changed = await commit(next => {
+      if (next.timer.status !== 'ready' || next.timer.phase !== 'focus' || !hasSubject(value)) return false
       next.timer.subject = value
+      return true
     })
+    if (changed && page === 'focus') {
+      focusChoice = ''
+      render({ focus: '#timer-subject' })
+    }
+  } else if (id === 'timer-activity') {
+    focusChoice = value
+    render({ focus: '#timer-activity' })
   } else if (id === 'card-subject') {
-    if (study.course) history.replaceState(null, '', '#flashcards')
+    history.replaceState(null, '', value ? `#flashcards/${value}` : '#flashcards')
     resetReview({ subject: value, course: '' })
     render({ focus: '#card-subject' })
   } else if (id === 'course-filter') {
@@ -534,8 +574,14 @@ async function navigate(initial = false) {
   }
   if (page === 'flashcards') {
     const chapter = courseById.get(detail)
-    if ((chapter?.id ?? '') !== study.course) {
-      resetReview({ course: chapter?.id ?? '', subject: chapter?.subject ?? '', mode: 'due' })
+    const subject = chapter?.subject ?? (hasSubject(detail) ? detail : '')
+    if ((chapter?.id ?? '') !== study.course || (detail && subject !== study.subject)) {
+      resetReview({ course: chapter?.id ?? '', subject, mode: 'due' })
+    }
+    const timer = state.timer
+    if (timer.phase === 'focus' && timer.status !== 'ready' && timer.activity?.route === `flashcards/${detail}` && !study.started) {
+      study.mode = reviewCards(state, study, 'due').length ? 'due' : 'practice'
+      prepareReview()
     }
   }
   if (page === 'feynman') {
@@ -545,7 +591,7 @@ async function navigate(initial = false) {
   if (page === 'exercices') {
     const [, , origin, deck] = location.hash.split('/')
     exerciseContext = mathContext(detail)
-    returnToCards = origin === 'cartes' ? (courseById.has(deck) ? `flashcards/${deck}` : 'flashcards') : ''
+    returnToCards = origin === 'cartes' ? (courseById.has(deck) || hasSubject(deck) ? `flashcards/${deck}` : 'flashcards') : ''
     const restart = origin === 'variante' && Boolean(exerciseContext.skill)
     if (restart) history.replaceState(null, '', `#exercices/${detail}`)
     const context = exerciseContext

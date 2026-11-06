@@ -1,7 +1,8 @@
 import { hasSubject, subjects } from './content.js'
 import { courseById, courses } from './courses.js'
+import { focusActivities, focusActivity } from './focus-activities.js'
 import { courseExerciseSkills, mathSkills, problemFor, skillById, skillForCard } from './math-practice.js'
-import { availableCustomCards, dailyGoal, dayKey, durations, dueCards, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
+import { availableCustomCards, dailyGoal, dayKey, dueCards, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
 
 const glyphs = {
   bolt: '<path d="m13 2-9 12h7l-1 8 10-12h-7l1-8Z"/>',
@@ -105,6 +106,7 @@ export function layout(state, page, content) {
   const stats = studyStats(state)
   const level = levelInfo(stats.xp)
   const name = escapeHtml(state.profile.name || 'FocusBro')
+  const float = floatingTimer(state.timer)
   return `<aside class="sidebar">
     <a class="brand" href="#accueil"><img src="./assets/bolt.svg" width="38" height="38" alt=""><span>Focus<span>Bro</span><small>TON QG DE RÉVISION</small></span></a>
     <div class="nav-caption">ESPACE DE TRAVAIL</div>
@@ -118,12 +120,12 @@ export function layout(state, page, content) {
       ${navItem(pages.at(-1), page)}
     </div>
   </aside>
-  <div class="workspace">
+  <div class="workspace${float ? ' has-focus-float' : ''}">
     <header class="topbar">
       <a class="brand mobile-brand" href="#accueil"><img src="./assets/bolt.svg" width="34" height="34" alt=""><span>Focus<span>Bro</span></span></a>
       <span class="today-date">${icon('calendar', 16)} <span>${weekday.format(new Date())}</span></span>
       <div class="top-actions">
-        ${state.timer.status !== 'ready' && page !== 'focus' ? `<a href="#focus" class="timer-pill" aria-label="Revenir au minuteur">${icon('timer', 16)} <span data-live-timer>${formatClock(remainingTime(state.timer))}</span></a>` : ''}
+        ${float}
         <a href="#progression" class="xp-pill" title="Voir ma progression">${icon('bolt', 16)} <strong>${number.format(stats.xp)} XP</strong></a>
         <a class="avatar" href="#profil" aria-label="Profil de ${name}" title="Profil de ${name}">${icon(state.profile.avatar, 19)}</a>
       </div>
@@ -306,25 +308,38 @@ export function formatClock(ms) {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 }
 
-export function focusView(state, sound) {
+function floatingTimer(timer) {
+  const isBreak = timer.phase === 'break'
+  if (!isBreak && timer.status === 'ready') return ''
+  const running = timer.status === 'running'
+  const label = timer.status === 'paused' ? 'Minuteur suspendu' : isBreak ? (running ? 'Pause' : 'Pause prête') : 'Focus en cours'
+  const actionLabel = running ? 'Mettre le minuteur en pause' : timer.status === 'paused' ? 'Reprendre le minuteur' : 'Démarrer la pause'
+  return `<section class="focus-float${isBreak ? ' is-break' : ''}" aria-label="Minuteur flottant">
+    <a href="#focus" class="focus-float-status" title="Ouvrir la session focus">${icon(isBreak ? 'coffee' : 'timer', 19)}<span><small>${label}</small><strong role="timer" data-live-timer>${formatClock(remainingTime(timer))}</strong></span></a>
+    ${button(icon(running ? 'pause' : 'play', 18), running ? 'pause-timer' : 'start-timer', 'secondary icon-button', `aria-label="${actionLabel}" title="${actionLabel}"`)}
+  </section>`
+}
+
+export function focusView(state, sound, choice) {
   const timer = state.timer
   const isBreak = timer.phase === 'break'
   const active = timer.status !== 'ready'
-  return `${heading('POMODORO', 'Session focus', 'Choisis une matière, puis donne-toi 25 minutes pour avancer.')}
+  const options = isBreak || (active && timer.activity) ? [] : focusActivities(state)
+  const activity = isBreak ? null : focusActivity(state, choice, options)
+  const controls = isBreak
+    ? active ? button(`${icon('stop', 18)} Arrêter la pause`, 'stop-timer', 'secondary') : `${button(`${icon('play', 18)} Démarrer la pause`, 'start-timer')}${button('Passer la pause', 'skip-break', 'secondary')}`
+    : active ? `${activity?.route ? button(`Ouvrir l’activité ${icon('arrow', 18)}`, 'open-focus-activity') : ''}${button(`${icon('stop', 18)} Arrêter la session`, 'stop-timer', 'secondary')}`
+      : button(`${icon('play', 18)} Démarrer le focus`, 'start-timer')
+  return `${heading('POMODORO', 'Session focus', 'Choisis une matière et commence tout de suite avec une activité.')}
     <div class="focus-layout">
-      <section class="focus-card panel ${isBreak ? 'break-mode' : ''}" aria-label="Minuteur Pomodoro">
+      <section class="focus-card panel ${isBreak ? 'break-mode' : ''}" aria-label="Préparation du Pomodoro">
         <div class="phase-label">${icon(isBreak ? 'coffee' : 'timer', 17)} ${isBreak ? 'Pause · 5 min' : 'Focus · 25 min'}</div>
-        <div class="dial">
-          <svg class="dial-ring" viewBox="0 0 240 240" aria-hidden="true"><circle class="dial-track" cx="120" cy="120" r="108"/><circle class="dial-progress" cx="120" cy="120" r="108" pathLength="100" style="stroke-dashoffset:${100 * (1 - remainingTime(timer) / durations[timer.phase])}"/></svg>
-          <div class="dial-label"><strong data-live-timer>${formatClock(remainingTime(timer))}</strong><span>${timer.status === 'paused' ? 'En pause' : isBreak ? 'Respire un peu' : 'Temps restant'}</span></div>
-        </div>
-        <label class="field timer-subject"><span id="timer-subject-label">Matière</span><select id="timer-subject" aria-labelledby="timer-subject-label" ${active ? 'disabled' : ''}>${subjectOptions(timer.subject)}</select></label>
-        <div class="timer-controls">
-          ${timer.status === 'running' ? button(`${icon('pause', 18)} Mettre en pause`, 'pause-timer') : button(`${icon('play', 18)} ${timer.status === 'paused' ? 'Reprendre' : isBreak ? 'Démarrer la pause' : 'Démarrer le focus'}`, 'start-timer')}
-          ${active ? button(`${icon('stop', 18)} Arrêter`, 'stop-timer', 'secondary') : ''}
-          ${isBreak && !active ? button('Passer la pause', 'skip-break', 'secondary') : ''}
-        </div>
-        <p class="timer-hint" id="timer-hint">${isBreak ? 'Profites-en pour te lever ou boire un verre d’eau.' : `${icon('bolt', 16)} +50 XP quand tu termines la session.`}</p>
+        ${isBreak ? `<div class="focus-proposal">${tile('coffee', 'mint')}<div><h2>${active ? 'Prends ton temps' : 'Tu as terminé ta session !'}</h2><p>Profites-en pour te lever ou boire un verre d’eau.</p></div></div>` : `
+          <div class="focus-fields"><label class="field"><span id="timer-subject-label">Matière</span><select id="timer-subject" aria-labelledby="timer-subject-label" ${active ? 'disabled' : ''}>${subjectOptions(timer.subject)}</select></label>
+            ${!active && options.length > 1 ? `<label class="field"><span id="timer-activity-label">Activité</span><select id="timer-activity" aria-labelledby="timer-activity-label">${options.map((item, index) => `<option value="${item.kind}" ${item.kind === activity?.kind ? 'selected' : ''}>${item.label}${index === 0 ? ' · proposée' : ''}</option>`).join('')}</select></label>` : ''}</div>
+          ${activity ? `<div class="focus-proposal">${tile(activity.icon, 'purple')}<div><small>${active ? 'ACTIVITÉ DE TA SESSION' : 'TON POINT DE DÉPART'}</small><h2>${escapeHtml(activity.title)}</h2><p>${escapeHtml(activity.detail)}</p></div></div>` : '<p class="timer-hint">Sélectionne une matière pour voir une activité proposée.</p>'}`}
+        <div class="timer-controls">${controls}</div>
+        ${isBreak ? '' : `<p class="timer-hint">${icon('bolt', 16)} +50 XP quand tu termines la session.</p>`}
       </section>
       <div class="focus-aside">
         <section class="panel padded"><div class="panel-title">${tile('headphones', 'purple')}<div><h2>Ambiance sonore</h2><p>Crée ta bulle.</p></div></div>

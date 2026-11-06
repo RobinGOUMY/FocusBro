@@ -28,13 +28,13 @@ export function createState() {
 export function restoreState(stored) {
   const state = { ...createState(), ...stored }
   if (state.timer.subject && !hasSubject(state.timer.subject)) {
-    state.timer = { ...state.timer, subject: 'autre' }
+    state.timer = { ...state.timer, subject: 'autre', activity: null }
   }
   return state
 }
 
 export function freshTimer(phase = 'focus', subject = '') {
-  return { phase, subject, status: 'ready', remaining: durations[phase], endsAt: null, id: null }
+  return { phase, subject, status: 'ready', remaining: durations[phase], endsAt: null, id: null, activity: null }
 }
 
 export function remainingTime(timer, now = Date.now()) {
