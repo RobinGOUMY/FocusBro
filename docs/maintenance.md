@@ -81,3 +81,5 @@ Pour l’Arcade, associe chaque question à l’identifiant d’un cours existan
 Pour héberger l’application, déploie le contenu de `dist/` sur un hébergement statique. Le site hébergé avec Sites utilise `.openai/hosting.json`.
 
 Sur Vercel, importe le dépôt GitHub ou utilise `npx vercel link` puis `npx vercel git connect` dans un terminal connecté. Dans les paramètres du projet, ouvre **Environments → Production → Branch Tracking** et sélectionne la branche à publier. Pour déclencher une première mise en ligne depuis un checkout vérifié, utilise `npx vercel deploy --prod`. Vérifie le domaine de production en navigation privée et ouvre directement `/#pass/themes` puis `/#arcade`. Les sauvegardes locales sont propres à ce domaine. [Branche de production sur Vercel](https://vercel.com/docs/git#production-branch)
+
+Le projet Vercel `focusbro` suit actuellement la branche `codex/pass-arcade` du dépôt GitHub. Un push sur cette branche déclenche un déploiement de production. Les fichiers locaux créés par `vercel link` sont ignorés par Git. [Site de production](https://focusbro-two.vercel.app/)

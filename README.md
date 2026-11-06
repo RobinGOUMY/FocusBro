@@ -2,6 +2,8 @@
 
 FocusBro est un espace de révision pour la Seconde générale et technologique. Il réunit une bibliothèque de cours, des exercices de maths adaptatifs, un minuteur Pomodoro, des flashcards à répétition espacée, un carnet Feynman guidé et une arcade de révision reliée au Pass Focus.
 
+[Ouvrir FocusBro en ligne](https://focusbro-two.vercel.app/)
+
 ## Installer et lancer en local
 
 Installe Git et Node.js 20 ou plus récent, puis exécute ces commandes dans un terminal.
