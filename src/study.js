@@ -1,15 +1,11 @@
 import { hasSubject, starterCards } from './content.js'
 import { courseCards } from './courses.js'
 import { createMathPractice, mathContext } from './math-practice.js'
+import { defaultCosmetics, levels } from './pass.js'
 
 export const storageKey = 'focusbro:v1'
 export const durations = { focus: 25 * 60_000, break: 5 * 60_000 }
 export const dailyGoal = 25
-export const levels = [
-  { title: 'Novice', xp: 0 },
-  { title: 'Érudit', xp: 150 },
-  { title: 'Maître', xp: 500 },
-]
 
 export function createState() {
   return {
@@ -21,12 +17,14 @@ export function createState() {
     notes: [],
     reading: {},
     mathPractice: createMathPractice(),
-    profile: { name: '', theme: 'violet', avatar: 'bolt', volume: 40, chime: true },
+    profile: { name: '', ...defaultCosmetics(), volume: 40, chime: true },
+    arcade: { records: {}, days: {}, recent: [] },
   }
 }
 
 export function restoreState(stored) {
-  const state = { ...createState(), ...stored }
+  const defaults = createState()
+  const state = { ...defaults, ...stored, profile: { ...defaults.profile, ...stored.profile } }
   if (state.timer.subject && !hasSubject(state.timer.subject)) {
     state.timer = { ...state.timer, subject: 'autre', activity: null }
   }
@@ -60,6 +58,17 @@ export function dayKey(timestamp = Date.now()) {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-')
 }
 
+export function shuffle(items) {
+  const result = [...items]
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(Math.random() * (index + 1))
+    const item = result[index]
+    result[index] = result[target]
+    result[target] = item
+  }
+  return result
+}
+
 function addDays(timestamp, days) {
   const date = new Date(timestamp)
   date.setDate(date.getDate() + days)
@@ -68,12 +77,14 @@ function addDays(timestamp, days) {
 
 export function studyStats(state, now = Date.now()) {
   const today = dayKey(now)
-  const days = new Set([...state.sessions.map(item => dayKey(item.at)), ...state.reviews.map(item => dayKey(item.at)), ...state.notes.map(item => dayKey(item.createdAt)), ...Object.values(state.reading).filter(item => item.completedAt).map(item => dayKey(item.completedAt)), ...Object.keys(state.mathPractice.days)])
+  const arcadeDays = Object.entries(state.arcade.days)
+  const days = new Set([...state.sessions.map(item => dayKey(item.at)), ...state.reviews.map(item => dayKey(item.at)), ...state.notes.map(item => dayKey(item.createdAt)), ...Object.values(state.reading).filter(item => item.completedAt).map(item => dayKey(item.completedAt)), ...Object.keys(state.mathPractice.days), ...arcadeDays.map(([day]) => day)])
   let offset = days.has(today) ? 0 : -1
   let streak = 0
   while (days.has(dayKey(addDays(now, offset--)))) streak += 1
   return {
-    xp: [...state.sessions, ...state.reviews].reduce((total, item) => total + item.xp, 0),
+    xp: [...state.sessions, ...state.reviews].reduce((total, item) => total + item.xp, 0)
+      + arcadeDays.reduce((total, [, entry]) => total + entry.xp, 0),
     minutes: state.sessions.reduce((total, item) => total + item.minutes, 0),
     todayMinutes: state.sessions.reduce((total, item) => total + (dayKey(item.at) === today ? item.minutes : 0), 0),
     streak,

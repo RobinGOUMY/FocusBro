@@ -22,6 +22,8 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 | Flashcards | Vérifier que les deux modes sélectionnent les chapitres travaillés, puis ouvrir « Toute la collection ». Démarrer une série, vérifier le repli des réglages, retourner une carte et vérifier que la position avance après l’évaluation. Une carte de maths marquée « Difficile » doit ouvrir la reprise ciblée. |
 | Feynman | Enregistrer une explication et un exemple, ouvrir la réponse proposée et recharger pour retrouver le texte. |
 | Focus | Choisir une matière et vérifier que le démarrage ouvre l’activité proposée. Naviguer, suspendre puis reprendre depuis le minuteur flottant et vérifier qu’une réponse en cours reste saisie. Terminer le Pomodoro pour vérifier le gain de 50 XP et le démarrage de la pause depuis une autre page. |
+| Pass et vestiaire | Charger une ancienne sauvegarde à 150 ou 500 XP avec un ancien avatar. Vérifier l’accès aux anciens déblocages et l’ajout des champs du vestiaire. Équiper un objet depuis le pass puis un autre depuis le profil. Vérifier les changements dans l’en-tête, l’aperçu, le vol et après rechargement. Tester un palier verrouillé et le palier final. |
+| Arcade | Tester les filtres, y compris une sélection vide. En vol, passer une porte, toucher un obstacle, utiliser le clavier et le tactile, puis essayer le mode sans pilotage. Dans le sprint, vérifier la pause, le combo, les corrections et la fin du chrono. Dans le memory, essayer une erreur puis terminer deux plateaux. Contrôler le record, le gain d’XP, le plafond quotidien et le retour au pass. |
 | Mobile | Ouvrir les écrans modifiés à 320 et 390 pixels de large et vérifier l’accès aux commandes et l’absence de défilement horizontal. |
 
 ## Structure
@@ -29,8 +31,11 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 | Emplacement | Rôle |
 | --- | --- |
 | `index.html`, `src/app.js` | Chargement de l’application, navigation par fragment d’URL et gestion des interactions. |
-| `src/views.js`, `src/style.css` | Vues, formulaires, navigation et styles adaptatifs. Les variables CSS portent les couleurs, les thèmes et les surfaces. |
+| `src/views.js`, `src/style.css`, `src/play.css` | Vues, formulaires, navigation et styles adaptatifs. Les variables CSS portent les couleurs, les thèmes et les surfaces. |
 | `src/study.js` | État de départ, minuteur, planification des cartes, XP et statistiques. |
+| `src/pass.js` | Paliers, seuils d’XP, catalogue des cosmétiques, valeurs de départ et validation de l’équipement. |
+| `src/arcade.js`, `src/arcade-controller.js`, `src/arcade-view.js` | Sélection des questions, règles de jeu, boucle de vol et de chrono, résultats et vues. |
+| `src/arcade-questions.js` | Banque de questions à trois choix, corrections et correspondances avec les cours. |
 | `src/focus-activities.js` | Suggestions du Pomodoro selon la matière, les cours lus, les cartes à revoir et les reprises en maths. |
 | `src/course-*.js`, `src/courses.js` | Chapitres par matière, index de cours et génération des identifiants de cartes. |
 | `src/math-numbers.js`, `src/math-topics.js` | Types d’exercices de maths, valeurs variables, indices et corrections. |
@@ -39,6 +44,8 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 | `server.mjs`, `build.mjs` | Serveur local et préparation du site statique. |
 
 Les données d’étude sont stockées dans `localStorage` sous la clé `focusbro:v1`. Lorsqu’un champ est ajouté, complète l’état de départ et vérifie le chargement d’une sauvegarde antérieure. Conserve les identifiants utilisés dans les sauvegardes et les liens vers les cours.
+
+Les récompenses du pass sont déduites de l’XP totale. Une ancienne sauvegarde retrouve ses réglages grâce à la fusion avec les valeurs de départ du profil. Les anciens cosmétiques conservent leurs identifiants et leurs seuils de 0, 150 et 500 XP. Chaque partie reste en mémoire jusqu’à sa fin ou jusqu’à la sortie de l’Arcade. Le résultat final met à jour `arcade.records`, le cumul journalier dans `arcade.days` et les 30 dernières parties dans `arcade.recent`. L’enregistrement passe par le verrou de sauvegarde utilisé par les autres activités lorsque le navigateur le prend en charge. Le plafond d’Arcade suit la date locale et le cumul journalier reste acquis lorsque les anciens résultats sortent de l’historique.
 
 Le choix explicite d’un chapitre est conservé dans `reading[id].worked`. En l’absence de choix explicite, un chapitre déjà marqué comme lu est considéré comme travaillé. Les révisions par défaut suivent ce périmètre. Les cartes personnelles sans chapitre sont accessibles dans « Toute la collection ».
 
@@ -57,6 +64,8 @@ Lorsqu’une matière est retirée du catalogue, la progression acquise compte d
 Un chapitre regroupe ses explications, un exercice corrigé, un défi Feynman avec indice et réponse proposée, et ses cartes. Ajoute-le dans le fichier de sa matière avec un identifiant unique. Les identifiants des cartes suivent leur ordre dans le chapitre. Pour préserver les révisions existantes, corrige les cartes en place et ajoute les nouvelles à la fin.
 
 Pour les maths, mets à jour les correspondances entre cartes et compétences dans `src/math-practice.js` si tu modifies leur ordre ou leur contenu. Associe l’exercice du cours à la compétence qui permet de refaire le même raisonnement avec d’autres valeurs. Chaque générateur fournit un énoncé, un indice, les réponses attendues et une correction. Vérifie plusieurs tirages, notamment les changements de signe, les fractions et les choix de réponse distincts.
+
+Pour l’Arcade, associe chaque question à l’identifiant d’un cours existant. Prévois une seule réponse correcte, deux choix plausibles et une correction courte. Le quiz mélange l’ordre des choix et le memory sélectionne des réponses distinctes. Garde au moins trois questions avec des réponses distinctes sur un chapitre pour que ce chapitre seul puisse alimenter un plateau de memory.
 
 ## Documenter, committer et pousser
 

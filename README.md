@@ -1,6 +1,6 @@
 # FocusBro
 
-FocusBro est un espace de révision pour la Seconde générale et technologique. Il réunit une bibliothèque de cours, des exercices de maths adaptatifs, un minuteur Pomodoro, des flashcards à répétition espacée et un carnet Feynman guidé.
+FocusBro est un espace de révision pour la Seconde générale et technologique. Il réunit une bibliothèque de cours, des exercices de maths adaptatifs, un minuteur Pomodoro, des flashcards à répétition espacée, un carnet Feynman guidé et une arcade de révision reliée au Pass Focus.
 
 ## Installer et lancer en local
 
@@ -24,9 +24,14 @@ Pour vérifier ou modifier le projet, consulte le [guide de maintenance](docs/ma
 - **Exercices de maths**. Entraîne-toi d’abord sur tes chapitres travaillés. Le menu permet aussi de choisir un chapitre ou de mélanger les 13 chapitres. Après une erreur, lis la correction puis reprends la même méthode avec d’autres valeurs. Deux variantes réussies d’affilée valident la reprise.
 - **Flashcards**. Les questions portent par défaut sur tes chapitres travaillés, en révision espacée comme en entraînement libre. Ouvre « Réglages de la révision » pour changer la matière, le mode ou choisir « Toute la collection » et accéder aux 288 cartes. Quand tu commences une série, les réglages se replient et un compteur indique où tu en es. Dix rappels faciles en révision espacée rapportent 20 XP. Sur une carte de maths fournie, « Moyen » ou « Difficile » lance une reprise immédiate avec d’autres valeurs.
 - **Feynman**. Le carnet te propose des défis sur les chapitres travaillés. Tu peux aussi choisir une autre notion. Chaque défi donne un indice et une réponse à consulter après avoir enregistré ton explication.
-- **Progression**. Suis ta série de jours, ton temps par matière et ton XP. Les niveaux Érudit et Maître débloquent des thèmes et des avatars.
+- **Arcade**. Choisis l’une des dix matières ou joue en mode mixte. Les 60 questions sont liées à des cours et peuvent être filtrées sur tes chapitres travaillés. Chaque bonne réponse ou paire trouvée rapporte 3 XP à la fin de la partie, jusqu’à 60 XP d’Arcade par jour. Tes records continuent de compter après ce plafond.
+  - **Quiz en vol**. Lis la question avant de décoller. Appuie sur Espace ou touche la zone de vol pour battre des ailes et traverse la porte de la bonne réponse. Tu peux aussi choisir directement une réponse avec l’option sans pilotage.
+  - **Sprint cérébral**. Tu as 45 secondes pour répondre à une série de questions. Les bonnes réponses consécutives font monter le combo. Le chrono s’arrête pendant les corrections et reprend à la question suivante.
+  - **Mémo Duo**. Retourne des cartes pour associer chaque question à sa réponse. Chaque erreur coûte 15 points et les paires trouvées restent visibles.
+- **Pass Focus**. L’XP de tes Pomodoros, flashcards et parties débloque automatiquement 20 paliers répartis en quatre actes. Équipe les récompenses dans le pass ou dans ton vestiaire. Tu peux combiner 44 cosmétiques répartis entre thèmes, avatars, cadres, bannières, titres et traînées. Les avatars et traînées équipés apparaissent dans le Quiz en vol.
+- **Progression**. Suis ta série de jours, ton temps par matière, ton XP et tes dernières activités.
 
-Les notes, cartes personnelles, chapitres lus, exercices en cours et statistiques sont sauvegardés dans le navigateur utilisé. Garde le même navigateur et la même adresse pour retrouver ta progression. Une adresse locale et une adresse hébergée ont chacune leur sauvegarde.
+Les notes, cartes personnelles, chapitres lus, exercices en cours, cosmétiques équipés, records et statistiques sont sauvegardés dans le navigateur utilisé. Garde le même navigateur et la même adresse pour retrouver ta progression. Une adresse locale et une adresse hébergée ont chacune leur sauvegarde.
 
 ## Contenu pédagogique
 

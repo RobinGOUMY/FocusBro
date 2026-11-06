@@ -2,6 +2,8 @@ import { hasSubject, subjects } from './content.js'
 import { courseById, courses } from './courses.js'
 import { focusActivities, focusActivity } from './focus-activities.js'
 import { courseExerciseSkills, mathSkills, problemFor, skillById, skillForCard } from './math-practice.js'
+import { arcadeModes } from './arcade.js'
+import { cosmetics, cosmeticTypes, equippedCosmetic, levels } from './pass.js'
 import { availableCustomCards, dailyGoal, dayKey, isCourseWorked, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
 
 const glyphs = {
@@ -47,6 +49,9 @@ const glyphs = {
   message: '<path d="M20 11a7 7 0 0 1-7 7H8l-5 3 1-5a7 7 0 0 1 5-12h4a7 7 0 0 1 7 7Z"/><path d="M8 10h8m-8 4h5"/>',
   trash: '<path d="M4 7h16m-10 0V4h4v3m4 0-1 13H7L6 7m4 4v5m4-5v5"/>',
   search: '<circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 4 4"/>',
+  arcade: '<path d="M7 7h10a4 4 0 0 1 4 3.5l1 5.5a2.5 2.5 0 0 1-4.2 2.3L15 16H9l-2.8 2.3A2.5 2.5 0 0 1 2 16l1-5.5A4 4 0 0 1 7 7Z"/><path d="M6 12h5m-2.5-2.5v5m7.5-2.5h.01m3 2h.01"/>',
+  flight: '<path d="m3 12 18-8-6 17-3.5-7.5L3 12Zm8.5 1.5L21 4"/>',
+  gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12m0-12H8.5A2.5 2.5 0 1 1 11 5.5L12 8Zm0 0h3.5A2.5 2.5 0 1 0 13 5.5L12 8Z"/>',
 }
 
 export function icon(name, size = 20) {
@@ -60,6 +65,8 @@ export const pages = [
   { id: 'focus', name: 'Session focus', mobile: 'Focus', icon: 'timer' },
   { id: 'flashcards', name: 'Flashcards', mobile: 'Cartes', icon: 'cards' },
   { id: 'feynman', name: 'Carnet Feynman', mobile: 'Carnet', icon: 'pen' },
+  { id: 'arcade', name: 'Arcade', mobile: 'Arcade', icon: 'arcade' },
+  { id: 'pass', name: 'Pass Focus', icon: 'gift' },
   { id: 'progression', name: 'Progression', icon: 'chart' },
   { id: 'profil', name: 'Personnalisation', icon: 'settings' },
 ]
@@ -67,14 +74,12 @@ export const pages = [
 const navGroups = [
   ['Espace d’étude', ['accueil', 'cours', 'focus']],
   ['Révisions', ['flashcards', 'exercices', 'feynman']],
-  ['Suivi', ['progression']],
+  ['Jeu et progression', ['arcade', 'pass', 'progression']],
 ]
 
 export const sounds = [
   ['off', 'Silence', 'mute'], ['rain', 'Pluie', 'rain'], ['lofi', 'Lo-fi', 'music'], ['white', 'Bruit blanc', 'waves'],
 ]
-const themes = [['violet', 'Violet', 0], ['mint', 'Menthe', 1], ['sky', 'Bleu électrique', 2]]
-const avatars = [['bolt', 'Éclair', 0], ['planet', 'Orbite', 1], ['ghost', 'Fantôme', 2]]
 
 export function escapeHtml(value = '') {
   const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
@@ -93,15 +98,15 @@ function timeLabel(minutes) {
   return hours ? `${hours} h ${String(minutes % 60).padStart(2, '0')}` : `${minutes} min`
 }
 
-const tile = (name, color) => `<span class="icon-tile ${color}">${icon(name)}</span>`
-const button = (content, action, variant = 'primary', attributes = '') => `<button type="button" class="btn ${variant}" data-action="${action}" ${attributes}>${content}</button>`
-const link = (content, page, variant = 'primary') => `<a class="btn ${variant}" href="#${page}">${content}</a>`
+export const tile = (name, color) => `<span class="icon-tile ${color}">${icon(name)}</span>`
+export const button = (content, action, variant = 'primary', attributes = '') => `<button type="button" class="btn ${variant}" data-action="${action}" ${attributes}>${content}</button>`
+export const link = (content, page, variant = 'primary') => `<a class="btn ${variant}" href="#${page}">${content}</a>`
 
 function bar(progress, label) {
   return `<div class="meter" role="progressbar" aria-label="${label}" aria-valuenow="${Math.round(progress * 100)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${progress * 100}%"></span></div>`
 }
 
-function heading(kicker, title, description) {
+export function heading(kicker, title, description) {
   return `<div class="page-heading"><div class="eyebrow">${kicker}</div><h1>${title}</h1><p>${description}</p></div>`
 }
 
@@ -113,14 +118,16 @@ export function layout(state, page, content) {
   const stats = studyStats(state)
   const level = levelInfo(stats.xp)
   const name = escapeHtml(state.profile.name || 'FocusBro')
+  const avatar = equippedCosmetic(state.profile, 'avatar')
+  const frame = equippedCosmetic(state.profile, 'frame')
   const float = floatingTimer(state.timer)
   const currentPage = pages.find(item => item.id === page)
   return `<aside class="sidebar">
     <a class="brand" href="#accueil"><img src="./assets/bolt.svg" width="38" height="38" alt=""><span>Focus<span>Bro</span><small>ESPACE DE RÉVISION</small></span></a>
     <nav class="main-nav" aria-label="Navigation principale">${navGroups.map(([title, ids]) => `<div class="nav-group"><p class="nav-caption">${title}</p>${ids.map(id => navItem(pages.find(item => item.id === id), page)).join('')}</div>`).join('')}</nav>
     <div class="sidebar-bottom">
-      <a class="sidebar-level" href="#progression">
-        <div class="level-heading">${tile('award', 'purple')}<div><b>${level.current.title}</b><small>Niveau ${level.index + 1}</small></div>${icon('chevron', 16)}</div>
+      <a class="sidebar-level" href="#pass">
+        <div class="level-heading">${tile('award', 'purple')}<div><b>${level.current.title}</b><small>Niveau ${level.current.number}</small></div>${icon('chevron', 16)}</div>
         ${bar(level.progress, 'Progression du niveau')}
         <div class="level-caption">${level.next ? `${number.format(stats.xp)} / ${level.next.xp} XP` : 'Niveau max'}<span>${Math.round(level.progress * 100)} %</span></div>
       </a>
@@ -134,8 +141,8 @@ export function layout(state, page, content) {
       <div class="top-actions">
         <span class="today-date">${icon('calendar', 16)} <span>${weekday.format(new Date())}</span></span>
         ${float}
-        <a href="#progression" class="xp-pill" title="Voir ma progression">${icon('bolt', 16)} <strong>${number.format(stats.xp)} XP</strong></a>
-        <a class="avatar" href="#profil" aria-label="Profil de ${name}" title="Profil de ${name}">${icon(state.profile.avatar, 19)}</a>
+        <a href="#pass" class="xp-pill" title="Voir le Pass Focus">${icon('bolt', 16)} <strong>${number.format(stats.xp)} XP</strong></a>
+        <a class="avatar profile-frame" data-frame="${frame.id}" style="--frame-color:${frame.visual}" href="#profil" aria-label="Profil de ${name}" title="Profil de ${name}">${avatarArt(avatar, 19)}</a>
       </div>
     </header>
     <main id="main-content" class="main-content" tabindex="-1">${content}</main>
@@ -202,6 +209,8 @@ export function dashboard(state) {
           ${moduleCard('flashcards', 'cards', 'purple', 'Flashcards', 'Retrouve la réponse de mémoire.', due ? `${countLabel(due, 'carte')} à revoir` : 'Rappel actif')}
           ${moduleCard('exercices', 'math', 'amber', 'Exercices de maths', 'Entraîne-toi avec des variantes.', `${mathSkills.length} types d’exercices`)}
           ${moduleCard('feynman', 'pen', 'mint', 'Carnet Feynman', 'Explique avec tes propres mots.', noteCount ? countLabel(noteCount, 'note') : 'Défis guidés')}
+          ${moduleCard('arcade', 'arcade', 'sky', 'Arcade', 'Révise en volant, en sprintant ou en jouant au memory.', '3 mini-jeux')}
+          ${moduleCard('pass', 'gift', 'amber', 'Pass Focus', 'Débloque des récompenses en gagnant de l’XP.', `Niveau ${levelInfo(stats.xp).current.number} sur ${levels.length}`)}
         </div>
       </section>
       <section class="dashboard-next" aria-labelledby="next-title">
@@ -212,8 +221,8 @@ export function dashboard(state) {
     </div></div>`
 }
 
-function subjectOptions(selected = '', all = false) {
-  return `<option value="" ${selected ? '' : 'selected'} ${all ? '' : 'disabled'}>${all ? 'Toutes les matières' : 'Choisir une matière'}</option>${subjects.map(subject => `<option value="${subject.id}" ${selected === subject.id ? 'selected' : ''}>${subject.name}</option>`).join('')}`
+export function subjectOptions(selected = '', all = false, options = subjects, allLabel = 'Toutes les matières') {
+  return `<option value="" ${selected ? '' : 'selected'} ${all ? '' : 'disabled'}>${all ? allLabel : 'Choisir une matière'}</option>${options.map(subject => `<option value="${subject.id}" ${selected === subject.id ? 'selected' : ''}>${subject.name}</option>`).join('')}`
 }
 
 export function latestCourse(state) {
@@ -482,42 +491,110 @@ export function progressView(state) {
   const bySubject = subjects.map(subject => {
     const sessions = state.sessions.filter(item => item.subject === subject.id)
     const reviews = state.reviews.filter(item => item.subject === subject.id)
-    return { ...subject, minutes: sessions.length * 25, reviews: reviews.length, xp: [...sessions, ...reviews].reduce((sum, item) => sum + item.xp, 0) }
-  }).filter(item => item.minutes || item.reviews).sort((first, second) => second.xp - first.xp)
+    const games = Object.values(state.arcade.days).map(day => day.subjects[subject.id]).filter(Boolean)
+    return {
+      ...subject, minutes: sessions.length * 25, reviews: reviews.length,
+      games: games.reduce((sum, item) => sum + item.rounds, 0),
+      xp: [...sessions, ...reviews, ...games].reduce((sum, item) => sum + item.xp, 0),
+    }
+  }).filter(item => item.minutes || item.reviews || item.games).sort((first, second) => second.xp - first.xp)
   const activity = [
     ...state.sessions.map(item => ({ ...item, icon: 'timer', title: 'Session focus', detail: `${item.minutes} min` })),
     ...state.reviews.map(item => ({ ...item, icon: 'cards', title: 'Carte révisée', detail: { easy: 'Facile', medium: 'Moyen', hard: 'Difficile' }[item.grade] })),
     ...state.notes.map(item => ({ ...item, icon: 'pen', title: 'Explication Feynman', detail: item.title, at: item.createdAt, xp: 0 })),
-  ].filter(item => hasSubject(item.subject)).sort((first, second) => second.at - first.at).slice(0, 8)
+    ...state.arcade.recent.filter(item => item.correct).map(item => ({
+      ...item, icon: 'arcade', title: arcadeModes[item.mode].name, detail: `${item.correct} / ${item.total} ${item.mode === 'memory' ? 'paires' : 'bonnes réponses'}`,
+    })),
+  ].filter(item => !item.subject || hasSubject(item.subject)).sort((first, second) => second.at - first.at).slice(0, 8)
   return `${heading('STATISTIQUES', 'Ta progression', 'Retrouve le temps investi et les récompenses gagnées.')}
-    <section class="panel padded progress-level"><div class="panel-title">${tile('award', 'purple')}<div><h2>Niveau ${level.index + 1} · ${level.current.title}</h2><p>${level.next ? `${level.next.xp - stats.xp} XP avant le niveau ${level.next.title}` : 'Tu as atteint le niveau Maître.'}</p></div></div>${bar(level.progress, 'Progression du niveau')}<div class="quest-caption"><span>${stats.xp} XP${level.next ? ` / ${level.next.xp} XP` : ''}</span><a href="#profil">Voir mes récompenses ${icon('arrow', 15)}</a></div></section>
+    <section class="panel padded progress-level"><div class="panel-title">${tile('award', 'purple')}<div><h2>Niveau ${level.current.number} · ${level.current.title}</h2><p>${level.next ? `${level.next.xp - stats.xp} XP avant le niveau ${level.next.title}` : 'Tu as atteint le niveau Légende.'}</p></div></div>${bar(level.progress, 'Progression du niveau')}<div class="quest-caption"><span>${stats.xp} XP${level.next ? ` / ${level.next.xp} XP` : ''}</span><a href="#pass">Voir le Pass Focus ${icon('arrow', 15)}</a></div></section>
     <div class="progress-grid">
       <section class="panel padded"><div class="panel-title">${tile('chart', 'sky')}<div><h2>Les 7 derniers jours</h2><p>Minutes passées en focus</p></div></div>
         <ul class="week-chart">${week.map(day => `<li class="${dayKey(day.date) === dayKey() ? 'current' : ''}" aria-label="${weekday.format(day.date)}, ${day.minutes} minutes"><strong>${day.minutes}</strong><span class="chart-slot"><span style="height:${day.minutes / ceiling * 100}%"></span></span><small>${dayLabel.format(day.date)}</small></li>`).join('')}</ul>
       </section>
       <section class="panel padded"><div class="panel-title">${tile('book', 'mint')}<div><h2>Par matière</h2><p>Ton travail et ton XP</p></div></div>
-        ${bySubject.length ? `<ul class="item-list">${bySubject.map(item => `<li class="activity-row">${tile(item.icon, item.color)}<span><strong>${item.name}</strong><small>${timeLabel(item.minutes)} · ${countLabel(item.reviews, 'carte')}</small></span><b>${item.xp} XP</b></li>`).join('')}</ul>` : '<p>Termine une session focus ou révise une carte pour voir apparaître une matière.</p>'}
+        ${bySubject.length ? `<ul class="item-list">${bySubject.map(item => `<li class="activity-row">${tile(item.icon, item.color)}<span><strong>${item.name}</strong><small>${timeLabel(item.minutes)} · ${countLabel(item.reviews, 'carte')}${item.games ? ` · ${countLabel(item.games, 'partie')}` : ''}</small></span><b>${item.xp} XP</b></li>`).join('')}</ul>` : '<p>Termine une session focus, révise une carte ou joue dans l’Arcade pour voir apparaître une matière.</p>'}
       </section>
     </div>
-    <section class="panel padded recent"><div class="panel-title">${tile('clock', 'purple')}<div><h2>Activité récente</h2><p>Tes dernières sessions, cartes et explications</p></div></div>
-      ${activity.length ? `<ul class="item-list">${activity.map(item => `<li class="activity-row">${tile(item.icon, subjectById(item.subject)?.color ?? 'purple')}<span><strong>${item.title}</strong><small>${subjectById(item.subject)?.name} · ${escapeHtml(item.detail)} · ${shortDate.format(item.at)}</small></span>${item.xp ? `<b>+${item.xp} XP</b>` : ''}</li>`).join('')}</ul>` : '<p>Ton historique se remplira au fil de tes révisions.</p>'}
+    <section class="panel padded recent"><div class="panel-title">${tile('clock', 'purple')}<div><h2>Activité récente</h2><p>Tes dernières sessions, cartes, explications et parties</p></div></div>
+      ${activity.length ? `<ul class="item-list">${activity.map(item => `<li class="activity-row">${tile(item.icon, subjectById(item.subject)?.color ?? 'purple')}<span><strong>${item.title}</strong><small>${subjectById(item.subject)?.name ?? 'Toutes les matières'} · ${escapeHtml(item.detail)} · ${shortDate.format(item.at)}</small></span>${item.xp ? `<b>+${item.xp} XP</b>` : ''}</li>`).join('')}</ul>` : '<p>Ton historique se remplira au fil de tes révisions.</p>'}
     </section>`
 }
 
+export function avatarArt(item, size) {
+  if (glyphs[item.id]) return icon(item.id, size)
+  return `<span class="avatar-emoji" style="--emoji-size:${size}px" aria-hidden="true">${item.visual}</span>`
+}
+
+function cosmeticArt(item) {
+  const { type, visual } = item
+  const art = { frame: 'target', banner: 'grid', theme: 'spark', trail: 'flight' }
+  const color = visual.startsWith('#') ? visual : 'var(--accent)'
+  const mark = type === 'avatar' ? avatarArt(item, 23) : art[type] ? icon(art[type], 22) : visual
+  return `<span class="cosmetic-art" data-kind="${type}" style="--reward-color:${color}" aria-hidden="true">${mark}</span>`
+}
+
+function rewardChoice(item, state, xp) {
+  const locked = xp < item.xp
+  const active = state.profile[item.type] === item.id
+  const status = locked ? `Niv. ${item.level}` : active ? 'Équipé' : 'Équiper'
+  const content = `${cosmeticArt(item)}<span class="cosmetic-copy"><small>${cosmeticTypes[item.type]}</small><strong>${item.label}</strong><span>${status}</span></span>${icon(locked ? 'lock' : active ? 'check' : 'plus', 15)}`
+  return button(content, 'reward', 'cosmetic-choice', `data-type="${item.type}" data-value="${item.id}" aria-pressed="${active}" ${locked ? 'disabled' : ''}`)
+}
+
+export function passView(state) {
+  const { xp } = studyStats(state)
+  const { current, next, progress } = levelInfo(xp)
+  const owned = cosmetics.filter(item => item.xp <= xp).length
+  const acts = [
+    ['Décollage', 'sky'], ['Vitesse de croisière', 'mint'], ['En orbite', 'amber'], ['Au-delà des étoiles', 'purple'],
+  ]
+  return `${heading('RÉCOMPENSES DE RÉVISION', 'Pass Focus', 'Gagne de l’XP en révisant, franchis les paliers et équipe tes récompenses.')}
+    <section class="pass-hero panel">
+      <div class="pass-hero-copy"><div class="pass-chip">${icon('award', 16)} NIVEAU ${current.number} / ${levels.length}</div>
+        <h2>${current.title}</h2><p>${next ? `Plus que ${number.format(next.xp - xp)} XP avant le palier ${next.number} · ${next.title}.` : 'Tu as débloqué toutes les récompenses du Pass Focus.'}</p>
+        ${bar(progress, 'Progression vers le prochain palier')}
+        <div class="pass-meter-caption"><span>${number.format(xp)} XP au total</span><span>${next ? `${number.format(next.xp)} XP pour le prochain palier` : 'Palier final atteint'}</span></div>
+        <div class="toolbar-actions">${button(`Voir ${next ? 'le prochain palier' : 'le dernier palier'} ${icon('arrow', 17)}`, 'jump-to-tier', 'primary', `data-value="${(next ?? current).number}"`)}${link('Ma collection', 'profil', 'secondary')}</div>
+      </div>
+      <div class="pass-hero-loot"><span class="pass-loot-label">${next ? 'PROCHAIN DÉBLOCAGE' : 'DERNIER PALIER'}</span><div class="pass-loot-art">${(next ?? current).rewards.map(cosmeticArt).join('')}</div><strong>${(next ?? current).rewards.map(item => item.label).join(' + ')}</strong><small>${owned} / ${cosmetics.length} cosmétiques débloqués</small></div>
+    </section>
+    ${acts.map(([name, color], index) => `<section class="pass-act" aria-labelledby="act-${index}">
+      <div class="pass-act-heading">${tile('spark', color)}<div><span class="section-kicker">ACTE 0${index + 1}</span><h2 id="act-${index}">${name}</h2></div></div>
+      <ol class="pass-track" start="${index * 5 + 1}">${levels.slice(index * 5, index * 5 + 5).map(level => {
+        const reached = xp >= level.xp
+        const status = level === current ? 'Ton niveau' : reached ? 'Débloqué' : level === next ? 'Prochain palier' : 'Verrouillé'
+        const rewards = `<div class="tier-rewards">${level.rewards.map(item => rewardChoice(item, state, xp)).join('')}</div>`
+        return `<li class="pass-tier panel${level === current ? ' current' : ''}${level === next ? ' upcoming' : ''}" id="pass-tier-${level.number}" tabindex="-1">
+          <div class="tier-heading"><span class="tier-number">${String(level.number).padStart(2, '0')}</span><div><h3>${level.title}</h3><span>${number.format(level.xp)} XP · ${status}</span></div></div>
+          ${level.number === 1 ? `<details class="tier-starter"><summary>${level.rewards.length} cosmétiques de départ</summary>${rewards}</details>` : rewards}</li>`
+      }).join('')}</ol></section>`).join('')}
+    <div class="toolbar-actions pass-footer">${link(`${icon('arcade', 17)} Jouer dans l’Arcade`, 'arcade', 'primary')}${link('Voir mes statistiques', 'progression', 'secondary')}</div>`
+}
+
 export function profileView(state) {
-  const level = levelInfo(studyStats(state).xp)
-  const choices = (options, type) => options.map(([id, label, required]) => {
-    const locked = level.index < required
-    const active = state.profile[type] === id
-    const visual = type === 'theme' ? `<span class="theme-swatch ${id}"></span>` : tile(id, 'purple')
-    return button(`${visual}<span><strong>${label}</strong><small>${locked ? `Niveau ${required + 1} · ${required === 1 ? 'Érudit' : 'Maître'}` : active ? 'Sélectionné' : 'Disponible'}</small></span>${locked ? icon('lock', 16) : active ? icon('check', 16) : ''}`, 'reward', 'reward-button', `data-type="${type}" data-value="${id}" aria-pressed="${active}" ${locked ? 'disabled' : ''}`)
-  }).join('')
-  return `${heading('RÉCOMPENSES ET PARAMÈTRES', 'Ton profil', 'Personnalise ton espace au fil de ta progression.')}
-    <div class="progress-grid">
+  const { xp } = studyStats(state)
+  const name = escapeHtml(state.profile.name || 'FocusBro')
+  const avatar = equippedCosmetic(state.profile, 'avatar')
+  const frame = equippedCosmetic(state.profile, 'frame')
+  const banner = equippedCosmetic(state.profile, 'banner')
+  const title = equippedCosmetic(state.profile, 'title')
+  const trail = equippedCosmetic(state.profile, 'trail')
+  const unlocked = cosmetics.filter(item => item.xp <= xp)
+  const categories = { theme: 'Thèmes', avatar: 'Avatars', frame: 'Cadres', banner: 'Bannières', trail: 'Traînées', title: 'Titres' }
+  return `${heading('PERSONNALISATION', 'Ton vestiaire', 'Mélange les cosmétiques débloqués avec le Pass Focus.')}
+    <div class="progress-grid profile-overview">
+      <section class="profile-banner panel" data-design="${banner.id}" style="--banner-color:${banner.visual}" aria-label="Aperçu du profil">
+        <div class="profile-showcase"><span class="profile-frame" data-frame="${frame.id}" style="--frame-color:${frame.visual}">${avatarArt(avatar, 39)}</span><div><h2>${name}</h2><p>${title.visual} ${title.label}</p></div></div>
+        <div class="profile-flight-preview" style="--trail-color:${trail.visual}">${icon('flight', 23)} <span>${trail.label} en vol</span></div>
+      </section>
       <section class="panel padded"><div class="panel-title">${tile('settings', 'purple')}<div><h2>Préférences</h2><p>Enregistrées dans ce navigateur.</p></div></div><form id="profile-form" class="stack-form"><label class="field"><span>Prénom ou pseudo</span><input name="name" placeholder="FocusBro" maxlength="24" value="${escapeHtml(state.profile.name)}"></label><label class="toggle-field"><input type="checkbox" name="chime" ${state.profile.chime ? 'checked' : ''}> Jouer un son à la fin d’une session</label><button type="submit" class="btn primary">${icon('check', 17)} Enregistrer</button></form></section>
-      <section class="panel padded"><div class="panel-title">${tile('crown', 'amber')}<div><h2>Thèmes</h2><p>De nouvelles couleurs à chaque niveau.</p></div></div><div class="reward-list">${choices(themes, 'theme')}</div></section>
-      <section class="panel padded"><div class="panel-title">${tile('ghost', 'mint')}<div><h2>Avatars</h2><p>Choisis ton emblème.</p></div></div><div class="reward-list">${choices(avatars, 'avatar')}</div></section>
-    </div>`
+    </div>
+    <div class="collection-heading"><div><h2>Ma collection</h2><p>${unlocked.length} / ${cosmetics.length} cosmétiques débloqués</p></div>${link(`${icon('gift', 17)} Voir le Pass Focus`, 'pass', 'secondary')}</div>
+    <div class="collection-grid">${Object.entries(categories).map(([type, label]) => {
+      const items = unlocked.filter(item => item.type === type)
+      return `<section class="panel padded"><h3>${label} <span>${items.length}</span></h3><div class="tier-rewards">${items.map(item => rewardChoice(item, state, xp)).join('')}</div></section>`
+    }).join('')}</div>`
 }
 
 export function cardForm(card) {

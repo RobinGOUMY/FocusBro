@@ -1,10 +1,12 @@
 import { setAmbience, setVolume, unlockAudio, chime } from './audio.js'
+import { createArcade } from './arcade-controller.js'
 import { hasSubject } from './content.js'
 import { courseById } from './courses.js'
 import { focusActivity } from './focus-activities.js'
 import { advanceMathTrack, beginMathTrack, mathContext, recordMathAttempt, skillForCard } from './math-practice.js'
-import { createState, dayKey, freshTimer, gradeCard, isCourseWorked, levelInfo, mathReviewContext, remainingTime, restoreState, reviewCards, settleTimer, storageKey, studyStats } from './study.js'
-import { cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, profileView, progressView, readerView, suggestedChallenge } from './views.js'
+import { equipCosmetic, equippedCosmetic } from './pass.js'
+import { createState, dayKey, freshTimer, gradeCard, isCourseWorked, levelInfo, mathReviewContext, remainingTime, restoreState, reviewCards, settleTimer, shuffle, storageKey, studyStats } from './study.js'
+import { cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, passView, profileView, progressView, readerView, suggestedChallenge } from './views.js'
 
 const app = document.querySelector('#app')
 const dialog = document.querySelector('#dialog')
@@ -29,6 +31,7 @@ let persistenceFailed = false
 let lastDay = dayKey()
 let dialogTrigger
 let confirmAction
+const arcade = createArcade({ app, getState: () => state, render, commit, createId })
 
 function readState() {
   try {
@@ -61,7 +64,7 @@ async function commit(change) {
       }
     }
     const unlocked = levelInfo(studyStats(state).xp)
-    if (unlocked.index > previousLevel) celebrate(`Niveau ${unlocked.current.title} débloqué !`, 'Un thème et un avatar t’attendent dans ton profil.')
+    if (unlocked.index > previousLevel) celebrate(`Niveau ${unlocked.current.number} · ${unlocked.current.title}`, 'De nouvelles récompenses t’attendent dans le Pass Focus.')
     else if (finished === 'focus') celebrate('Session terminée · +50 XP', 'Tu as bien mérité cinq minutes de pause.')
     else if (finished === 'break') {
       chime(state.profile.chime, state.profile.volume)
@@ -96,10 +99,14 @@ function render({ preserveForm = false, focus } = {}) {
     focus: () => focusView(state, sound, focusChoice),
     flashcards: () => flashcardsView(state, study),
     feynman: () => feynmanView(state, challengeId, selectedNote),
+    arcade: () => arcade.view(state),
+    pass: () => passView(state),
     progression: () => progressView(state),
     profil: () => profileView(state),
   }[page]()
-  document.documentElement.dataset.theme = state.profile.theme
+  const theme = equippedCosmetic(state.profile, 'theme')
+  document.documentElement.dataset.theme = theme.id
+  document.documentElement.style.setProperty('--theme-color', theme.visual)
   app.innerHTML = layout(state, page, content)
   app.querySelectorAll('main details').forEach((detail, index) => {
     if (openDetails[index]) detail.open = true
@@ -120,6 +127,7 @@ function render({ preserveForm = false, focus } = {}) {
     }
   }
   if (focus) app.querySelector(focus)?.focus({ preventScroll: true })
+  arcade.sync()
   updateClock()
 }
 
@@ -272,16 +280,6 @@ function syncReviewQueue() {
   if (study.queue[0] !== previousCard) study.flipped = false
 }
 
-function shuffle(cards) {
-  for (let index = cards.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1))
-    const card = cards[index]
-    cards[index] = cards[target]
-    cards[target] = card
-  }
-  return cards
-}
-
 function prepareReview() {
   const available = reviewCards(state, study)
   let cards = available
@@ -387,6 +385,7 @@ function deleteNote(id) {
 }
 
 const actions = {
+  ...arcade.actions,
   'start-timer': startTimer,
   'pause-timer': pauseTimer,
   'stop-timer': stopTimer,
@@ -468,10 +467,15 @@ const actions = {
     render({ focus: '[name="body"]' })
   },
   'delete-note': ({ value }) => deleteNote(value),
+  'jump-to-tier': ({ value }) => {
+    const tier = document.getElementById(`pass-tier-${value}`)
+    tier?.focus({ preventScroll: true })
+    tier?.scrollIntoView({ block: 'nearest' })
+  },
   reward: async ({ type, value }) => {
-    await commit(next => { next.profile[type] = value })
+    const item = await commit(next => equipCosmetic(next, type, value, studyStats(next).xp))
     render({ preserveForm: true, focus: `[data-type="${type}"][data-value="${value}"]` })
-    notify(type === 'theme' ? 'Thème activé' : 'Avatar sélectionné')
+    if (item) notify('Équipement modifié', item.label)
   },
   'close-dialog': () => dialog.close(),
   confirm: async () => {
@@ -504,6 +508,7 @@ app.addEventListener('input', event => {
 })
 
 app.addEventListener('change', async event => {
+  if (arcade.change(event.target)) return
   const { id, value } = event.target
   if (id === 'timer-subject') {
     const changed = await commit(next => {
@@ -597,6 +602,7 @@ document.addEventListener('submit', async event => {
 async function navigate(initial = false) {
   const previousPage = page
   page = pageFromUrl()
+  if (previousPage === 'arcade' && page !== 'arcade') arcade.leave()
   const detail = routeDetail()
   currentCourse = page === 'cours' ? courseById.get(detail) : null
   if (page === 'cours' && !currentCourse && detail !== library.subject) {
