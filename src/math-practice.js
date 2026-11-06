@@ -111,8 +111,9 @@ function variant(model, skill, { source = '', previous } = {}) {
 }
 
 export function beginMathTrack(model, context, { source = '', recovery = false, restart = false } = {}) {
+  if (!context.options.length) return false
   const existing = model.tracks[context.key]
-  if (existing && !recovery && !restart) return false
+  if (existing && !recovery && !restart && context.options.some(skill => skill.id === existing.current.skill)) return false
   const track = existing ?? { recentSkills: [], chain: 0, answered: 0, correct: 0 }
   const skill = chooseSkill(model, context, track)
   if (recovery) {
@@ -128,7 +129,8 @@ export function beginMathTrack(model, context, { source = '', recovery = false, 
 
 function matchingTrack(model, context, current) {
   const track = model.tracks[context.key]
-  return track?.current && current && track.current.skill === current.skill && track.current.seed === current.seed ? track : null
+  if (!track?.current || !current || !context.options.some(skill => skill.id === current.skill)) return null
+  return track.current.skill === current.skill && track.current.seed === current.seed ? track : null
 }
 
 export function recordMathAttempt(model, context, current, values, day) {

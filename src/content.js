@@ -65,6 +65,15 @@ const decks = {
   ],
 }
 
+const starterCourses = {
+  maths: ['droites-plan', 'vecteurs-plan', 'calcul-litteral', 'calcul-litteral', 'equations-inequations', 'vecteurs-plan'],
+  francais: ['poesie-vers', 'recit-narration', 'methode-francais', 'methode-francais', 'idees-presse', 'poesie-vers'],
+  histoire: ['ouverture-atlantique', 'renaissance-reformes', 'renaissance-reformes', 'populations-developpement', 'risques-ressources', 'periodes-histoire'],
+  physique: ['mouvements-vitesse', 'mouvements-vitesse', 'corps-purs-melanges', 'atomes-ions', 'atomes-ions', 'corps-purs-melanges'],
+  svt: ['cellules-specialisees', 'metabolisme-cellules', 'adn-mutations', 'biodiversite-evolution', 'microbiote-pathogenes', 'adn-mutations'],
+  anglais: ['english-past-memory', 'english-identity', 'english-past-memory', 'english-past-memory', 'english-comprehension', 'english-generations'],
+}
+
 export const starterCards = Object.entries(decks).flatMap(([subject, cards]) =>
-  cards.map(([question, answer], index) => ({ id: `${subject}-${index}`, subject, question, answer })),
+  cards.map(([question, answer], index) => ({ id: `${subject}-${index}`, subject, course: starterCourses[subject][index], question, answer })),
 )

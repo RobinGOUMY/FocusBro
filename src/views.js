@@ -2,7 +2,7 @@ import { hasSubject, subjects } from './content.js'
 import { courseById, courses } from './courses.js'
 import { focusActivities, focusActivity } from './focus-activities.js'
 import { courseExerciseSkills, mathSkills, problemFor, skillById, skillForCard } from './math-practice.js'
-import { availableCustomCards, dailyGoal, dayKey, dueCards, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
+import { availableCustomCards, dailyGoal, dayKey, isCourseWorked, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
 
 const glyphs = {
   bolt: '<path d="m13 2-9 12h7l-1 8 10-12h-7l1-8Z"/>',
@@ -145,7 +145,8 @@ function moduleCard(page, symbol, color, title, detail, status) {
 
 export function dashboard(state) {
   const stats = studyStats(state)
-  const due = dueCards(state).length
+  const due = reviewCards(state, {}, 'due').length
+  const hasWorked = courses.some(course => isCourseWorked(state, course.id))
   const noteCount = state.notes.filter(note => hasSubject(note.subject)).length
   const latest = latestCourse(state)
   const goal = Math.min(1, stats.todayMinutes / dailyGoal)
@@ -170,7 +171,7 @@ export function dashboard(state) {
         <div class="section-heading"><h2 id="modules-title">Tes modules</h2><p>Change de méthode selon ce que tu veux travailler.</p></div>
         <div class="module-grid">
           ${moduleCard(latest ? `cours/${latest.id}` : 'cours', 'book', 'sky', latest ? 'Reprendre un cours' : 'Bibliothèque de cours', latest ? `Reprends ta lecture de « ${latest.title} ». ` : 'Lis les cours de l’année à ton rythme, avec des exemples et des exercices corrigés.', `${courses.length} chapitres`)}
-          ${moduleCard('flashcards', 'cards', 'purple', 'Flashcards', 'Teste ta mémoire et revois les notions au bon moment.', due ? `${countLabel(due, 'carte')} à réviser` : 'À jour')}
+          ${moduleCard('flashcards', 'cards', 'purple', 'Flashcards', 'Teste ta mémoire sur les chapitres que tu as travaillés.', due ? `${countLabel(due, 'carte')} à réviser` : hasWorked ? 'À jour' : 'Indiquer mes chapitres')}
           ${moduleCard('feynman', 'pen', 'mint', 'Carnet Feynman', 'Choisis un défi guidé et explique la notion avec tes mots.', noteCount ? countLabel(noteCount, 'note') : 'Défis guidés')}
         </div>
       </section>
@@ -190,18 +191,25 @@ function subjectOptions(selected = '', all = false) {
 }
 
 export function latestCourse(state) {
-  const recent = Object.entries(state.reading).filter(([id]) => courseById.has(id))
+  const recent = Object.entries(state.reading).filter(([id, progress]) => courseById.has(id) && progress.openedAt)
     .sort((first, second) => second[1].openedAt - first[1].openedAt)
   return courseById.get(recent[0]?.[0])
 }
 
 const normalize = text => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 
+function workedButton(state, course) {
+  const worked = isCourseWorked(state, course.id)
+  return button(`${icon(worked ? 'check' : 'plus', 16)} ${worked ? 'Travaillé' : 'Pas encore'}`, 'mark-worked', 'secondary worked-toggle', `data-value="${course.id}" aria-pressed="${worked}" aria-label="Chapitre travaillé · ${escapeHtml(course.title)}"`)
+}
+
 export function courseResults(state, subjectId, query, filter) {
   const words = normalize(query.trim()).split(/\s+/).filter(Boolean)
   const matches = courses.filter(course => {
     const done = Boolean(state.reading[course.id]?.completedAt)
-    if ((subjectId && course.subject !== subjectId) || (filter === 'done' && !done) || (filter === 'new' && done)) return false
+    if ((subjectId && course.subject !== subjectId) || (filter === 'done' && !done)) return false
+    const worked = isCourseWorked(state, course.id)
+    if ((filter === 'worked' && !worked) || (filter === 'unworked' && worked)) return false
     const text = normalize([course.title, course.topic, course.intro, subjectById(course.subject).name, ...course.sections.map(section => `${section.heading} ${section.text}`)].join(' '))
     return words.every(word => text.includes(word))
   })
@@ -209,27 +217,28 @@ export function courseResults(state, subjectId, query, filter) {
   if (!subjectId && !words.length && filter === 'all') {
     return `<div class="library-grid">${subjects.filter(subject => matches.some(course => course.subject === subject.id)).map(subject => {
       const chapters = matches.filter(course => course.subject === subject.id)
-      const read = chapters.filter(course => state.reading[course.id]?.completedAt).length
-      return `<a class="panel subject-card" href="#cours/${subject.id}">${tile(subject.icon, subject.color)}<div><h2>${subject.name}</h2><p>${countLabel(chapters.length, 'chapitre')} · ${read} lu${read === 1 ? '' : 's'}</p></div>${icon('chevron', 17)}${bar(read / chapters.length, `Chapitres lus en ${subject.name}`)}</a>`
+      const worked = chapters.filter(course => isCourseWorked(state, course.id)).length
+      return `<a class="panel subject-card" href="#cours/${subject.id}">${tile(subject.icon, subject.color)}<div><h2>${subject.name}</h2><p>${worked} / ${chapters.length} travaillés</p></div>${icon('chevron', 17)}${bar(worked / chapters.length, `Chapitres travaillés en ${subject.name}`)}</a>`
     }).join('')}</div>`
   }
 
   return `<p class="result-count" role="status">${countLabel(matches.length, 'chapitre')}</p>${matches.length ? `<div class="chapter-list">${matches.map(course => {
     const subject = subjectById(course.subject)
     const read = Boolean(state.reading[course.id]?.completedAt)
-    return `<a class="panel chapter-row" href="#cours/${course.id}">${tile(read ? 'check' : subject.icon, read ? 'mint' : subject.color)}<span><small>${subject.name} · ${course.topic}</small><strong>${course.title}</strong><span class="chapter-summary">${course.intro}</span></span><span class="read-state">${read ? 'Lu · Reprendre' : 'Lire'} ${icon('chevron', 16)}</span></a>`
+    return `<article class="panel chapter-row"><a class="chapter-open" href="#cours/${course.id}">${tile(read ? 'check' : subject.icon, read ? 'mint' : subject.color)}<span><small>${subject.name} · ${course.topic}</small><strong>${course.title}</strong><span class="chapter-summary">${course.intro}</span></span><span class="read-state">${read ? 'Relire' : 'Lire'} ${icon('chevron', 16)}</span></a>${workedButton(state, course)}</article>`
   }).join('')}</div>` : '<div class="panel empty-state"><h2>Aucun chapitre trouvé</h2><p>Essaie un autre mot-clé ou change de filtre.</p></div>'}`
 }
 
 export function libraryView(state, subjectId, query, filter) {
   const subject = subjectById(subjectId)
   const latest = latestCourse(state)
-  const read = courses.filter(course => state.reading[course.id]?.completedAt).length
+  const chapters = subject ? courses.filter(course => course.subject === subject.id) : courses
+  const worked = chapters.filter(course => isCourseWorked(state, course.id)).length
   return `${subject ? '<a class="back-link" href="#cours">' + icon('back', 17) + ' Toutes les matières</a>' : ''}
-    ${heading('PROGRAMME DE SECONDE', subject ? subject.name : 'Bibliothèque de cours', subject ? 'Choisis un chapitre pour le découvrir ou le relire.' : 'Lis les cours dans l’ordre qui te convient. Chaque chapitre a un exercice corrigé et des cartes prêtes à réviser.')}
-    ${!subject ? `<section class="panel library-banner"><div>${tile('book', 'sky')}<span><strong>${read} / ${courses.length} chapitres lus</strong><small>Ton parcours de Seconde</small></span></div>${latest ? link(`Reprendre ma lecture ${icon('arrow', 17)}`, `cours/${latest.id}`, 'secondary') : ''}</section>` : ''}
+    ${heading('PROGRAMME DE SECONDE', subject ? subject.name : 'Bibliothèque de cours', subject ? 'Coche les chapitres que tu as déjà vus en classe ou travaillés chez toi.' : 'Ouvre une matière et indique les chapitres que tu as travaillés pour personnaliser tes révisions.')}
+    <section class="panel library-banner"><div>${tile('book', 'sky')}<span><strong>${worked} / ${chapters.length} chapitres travaillés</strong><small>Tes questions de révision partent de cette sélection.</small></span></div>${subject ? (worked ? link(`Réviser cette matière ${icon('arrow', 17)}`, `flashcards/${subject.id}`, 'secondary') : '') : latest ? link(`Reprendre ma lecture ${icon('arrow', 17)}`, `cours/${latest.id}`, 'secondary') : ''}</section>
     ${!subject || subject.id === 'maths' ? `<section class="panel library-banner math-banner"><div>${tile('math', 'mint')}<span><strong>Entraînement de maths</strong><small>Des exercices différents à chaque essai</small></span></div>${link(`S’entraîner ${icon('arrow', 17)}`, 'exercices', 'secondary')}</section>` : ''}
-    <div class="library-tools"><label class="field"><span>Rechercher un cours</span><input id="course-search" type="search" value="${escapeHtml(query)}" placeholder="Ex. vecteurs, biodiversité, poésie…" autocomplete="off"></label><label class="field"><span id="course-filter-label">Avancement</span><select id="course-filter" aria-labelledby="course-filter-label"><option value="all">Tous les chapitres</option><option value="new" ${filter === 'new' ? 'selected' : ''}>À découvrir</option><option value="done" ${filter === 'done' ? 'selected' : ''}>Déjà lus</option></select></label></div>
+    <div class="library-tools"><label class="field"><span>Rechercher un cours</span><input id="course-search" type="search" value="${escapeHtml(query)}" placeholder="Ex. vecteurs, biodiversité, poésie…" autocomplete="off"></label><label class="field"><span id="course-filter-label">Avancement</span><select id="course-filter" aria-labelledby="course-filter-label"><option value="all">Tous les chapitres</option><option value="worked" ${filter === 'worked' ? 'selected' : ''}>Travaillés</option><option value="unworked" ${filter === 'unworked' ? 'selected' : ''}>Pas encore travaillés</option><option value="done" ${filter === 'done' ? 'selected' : ''}>Déjà lus</option></select></label></div>
     <section id="course-results" aria-label="Chapitres disponibles">${courseResults(state, subjectId, query, filter)}</section>`
 }
 
@@ -240,15 +249,17 @@ export function readerView(state, course) {
   const next = chapterList[course.number]
   const read = Boolean(state.reading[course.id]?.completedAt)
   const retrySkill = courseExerciseSkills[course.id]
+  const cardCount = reviewCards(state, { course: course.id, scope: 'all' }, 'practice').length
   return `<a class="back-link" href="#cours/${subject.id}">${icon('back', 17)} ${subject.name}</a>
     ${heading(`CHAPITRE ${course.number} / ${chapterList.length} · ${course.topic.toLocaleUpperCase('fr')}`, course.title, course.intro)}
+    <div class="reader-worked">${workedButton(state, course)}<span>Le statut « Travaillé » ajoute ce chapitre à tes questions.</span></div>
     <div class="reader-layout"><article class="panel reading-panel">
       ${course.sections.map((section, index) => `<section class="lesson-section"><h2><span>${index + 1}</span>${section.heading}</h2><p>${escapeHtml(section.text)}</p></section>`).join('')}
       <section class="exercise-box"><h2>${icon('target', 20)} À toi de jouer</h2><p>${escapeHtml(course.exercise.question)}</p><details><summary>Voir la correction</summary><p>${escapeHtml(course.exercise.answer)}</p></details>${retrySkill ? link(`${icon('rotate', 17)} Essayer avec d’autres valeurs`, `exercices/${retrySkill}/variante`, 'secondary exercise-variant') : ''}</section>
       <div class="reader-actions">${read ? `<span class="read-confirm">${icon('check', 18)} Chapitre lu</span>${button('Marquer à relire', 'mark-course', 'secondary')}` : button(`${icon('check', 17)} Marquer comme lu`, 'mark-course')}</div>
       <nav class="chapter-pagination" aria-label="Navigation entre chapitres"><span>${previous ? link(`${icon('back', 17)} Chapitre précédent`, `cours/${previous.id}`, 'secondary') : ''}</span><span>${next ? link(`Chapitre suivant ${icon('arrow', 17)}`, `cours/${next.id}`, 'secondary') : link('Voir les matières', 'cours', 'secondary')}</span></nav>
     </article>
-    <aside class="focus-aside"><section class="panel padded"><div class="panel-title">${tile('cards', 'purple')}<div><h2>Entraîne-toi</h2><p>${countLabel(course.cards.length, 'carte')} sur ce chapitre</p></div></div><div class="reader-links">${retrySkill ? link(`${icon('math', 17)} Faire les exercices du chapitre`, `exercices/${course.id}`, 'primary') : ''}${link(`${icon('cards', 17)} Réviser les cartes`, `flashcards/${course.id}`, 'secondary')}${link(`${icon('pen', 17)} Relever le défi Feynman`, `feynman/${course.id}`, 'secondary')}</div></section>
+    <aside class="focus-aside"><section class="panel padded"><div class="panel-title">${tile('cards', 'purple')}<div><h2>Entraîne-toi</h2><p>${countLabel(cardCount, 'carte')} sur ce chapitre</p></div></div><div class="reader-links">${retrySkill ? link(`${icon('math', 17)} Faire les exercices du chapitre`, `exercices/${course.id}`, 'primary') : ''}${link(`${icon('cards', 17)} Réviser les cartes`, `flashcards/${course.id}`, 'secondary')}${link(`${icon('pen', 17)} Relever le défi Feynman`, `feynman/${course.id}`, 'secondary')}</div></section>
       <section class="panel padded"><div class="panel-title">${tile(subject.icon, subject.color)}<div><h2>${subject.name}</h2><p>Les chapitres de la matière</p></div></div><ol class="reader-index">${chapterList.map(item => `<li><a href="#cours/${item.id}" ${item.id === course.id ? 'aria-current="page"' : ''}><span>${item.number}. ${item.title}</span>${state.reading[item.id]?.completedAt ? icon('check', 14) : ''}</a></li>`).join('')}</ol></section></aside></div>`
 }
 
@@ -278,15 +289,17 @@ function mathFeedback(problem, track, context, recovery, returnTo) {
 export function mathView(state, context, returnTo) {
   const track = state.mathPractice.tracks[context.key]
   const course = courseById.get(context.course)
+  const worked = context.key === 'worked'
   const selected = context.skill?.id ?? context.course
-  const lead = course ? `Travaille ${context.skill ? 'cette compétence' : 'les compétences du chapitre'} avec des valeurs qui changent à chaque essai.` : 'Un mélange de compétences de Seconde. Quand une réponse coince, tu retravailles tout de suite la même méthode.'
-  const controls = `<div class="math-controls"><label class="field"><span id="math-context-label">Ce que tu veux travailler</span><select id="math-context" aria-labelledby="math-context-label"><option value="">Mélanger les chapitres</option>${context.skill ? `<option value="${context.skill.id}" selected>${context.skill.name}</option>` : ''}${courses.filter(item => item.subject === 'maths').map(item => `<option value="${item.id}" ${selected === item.id ? 'selected' : ''}>${item.title}</option>`).join('')}</select></label>${returnTo ? link(`${icon('back', 17)} Retour aux flashcards`, returnTo, 'secondary') : ''}</div>`
+  const lead = course ? `Travaille ${context.skill ? 'cette compétence' : 'les compétences du chapitre'} avec des valeurs qui changent à chaque essai.` : worked ? 'Entraîne-toi sur les chapitres que tu as indiqués comme travaillés.' : 'Un mélange de compétences de Seconde. Quand une réponse coince, tu retravailles tout de suite la même méthode.'
+  const controls = `<div class="math-controls"><label class="field"><span id="math-context-label">Ce que tu veux travailler</span><select id="math-context" aria-labelledby="math-context-label"><option value="">Mes chapitres travaillés</option><option value="tous" ${context.key === 'mix' ? 'selected' : ''}>Tous les chapitres</option>${context.skill ? `<option value="${context.skill.id}" selected>${context.skill.name}</option>` : ''}${courses.filter(item => item.subject === 'maths').map(item => `<option value="${item.id}" ${selected === item.id ? 'selected' : ''}>${item.title}${isCourseWorked(state, item.id) ? '' : ' · à découvrir'}</option>`).join('')}</select></label>${returnTo ? link(`${icon('back', 17)} Retour aux flashcards`, returnTo, 'secondary') : ''}</div>`
   const header = `${course ? `<a class="back-link" href="#cours/${course.id}">${icon('back', 17)} Relire ${course.title}</a>` : ''}${heading('MATHS · ENTRAÎNEMENT ADAPTATIF', context.skill?.name ?? course?.title ?? 'Exercices de maths', lead)}${controls}`
-  if (!track) return `${header}<section class="panel empty-state" role="status"><h2>Préparation de l’exercice…</h2></section>`
+  if (!context.options.length) return `${header}<section class="panel empty-state">${tile('math', 'purple')}<h2>Quels chapitres de maths as-tu travaillés ?</h2><p>Indique-les dans la bibliothèque pour recevoir des exercices sur ces notions.</p>${link('Indiquer mes chapitres', 'cours/maths')}</section>`
+  if (!track || !context.options.some(skill => skill.id === track.current.skill)) return `${header}<section class="panel empty-state" role="status"><h2>Préparation de l’exercice…</h2></section>`
   const problem = problemFor(track.current)
   const skill = skillById.get(track.current.skill)
   const recovery = state.mathPractice.skills[skill.id]?.recovery ?? 0
-  const pending = mathSkills.filter(item => item.id !== skill.id && state.mathPractice.skills[item.id]?.recovery)
+  const pending = mathSkills.filter(item => item.id !== skill.id && state.mathPractice.skills[item.id]?.recovery && (!worked || isCourseWorked(state, item.course)))
   const [statement, code] = problem.prompt.split('\n\n')
   return `${header}<div class="focus-layout">
     <section class="panel padded math-panel" aria-label="Exercice en cours">
@@ -359,17 +372,22 @@ export function flashcardsView(state, study) {
   const subject = card && subjectById(card.subject)
   const course = courseById.get(study.course)
   const practice = study.mode === 'practice'
+  const worked = study.scope !== 'all'
   const deck = reviewCards(state, study, 'practice')
   const nextDue = deck
     .map(item => state.schedule[item.id]?.due)
     .filter(date => date && date > dayKey()).sort()[0]
-  const nextReview = nextDue ? `Prochaine révision espacée le ${shortDate.format(new Date(`${nextDue}T12:00:00`))}. Tu peux continuer en entraînement libre.`
+  const nextReview = !deck.length && worked ? 'Marque les chapitres déjà vus pour recevoir les questions qui leur correspondent.' : nextDue ? `Prochaine révision espacée le ${shortDate.format(new Date(`${nextDue}T12:00:00`))}. Tu peux continuer en entraînement libre.`
     : deck.length ? 'Tes cartes sont disponibles en entraînement libre. En maths, tu peux aussi essayer de nouvelles variantes.' : 'Choisis une matière de la bibliothèque pour démarrer.'
   const reviewed = state.reviews.filter(item => dayKey(item.at) === dayKey()).length
   const mastered = state.reviews.filter(item => item.grade === 'easy' && !item.practice).length
-  const title = study.started ? 'Série terminée !' : practice ? 'Prêt à t’entraîner ?' : cards.length ? 'Prêt à tester ta mémoire ?' : 'Tu es à jour !'
+  const title = !deck.length && worked ? 'Qu’as-tu déjà travaillé ?' : study.started ? 'Série terminée !' : practice ? 'Prêt à t’entraîner ?' : cards.length ? 'Prêt à tester ta mémoire ?' : 'Tu es à jour !'
+  const courseRoute = course ? `cours/${course.id}` : study.subject && study.subject !== 'autre' ? `cours/${study.subject}` : 'cours'
+  const emptyAction = !deck.length && worked
+    ? course ? button(`${icon('check', 17)} Marquer le chapitre comme travaillé`, 'mark-worked', 'primary', `data-value="${course.id}"`) : link('Indiquer mes chapitres', courseRoute)
+    : link('Voir les cours', courseRoute, 'secondary')
   return `${heading('RAPPEL ACTIF', 'Flashcards', 'Cherche la réponse de mémoire, puis retourne la carte pour te corriger.')}
-    <div class="study-toolbar"><label class="field compact-field"><span id="card-subject-label">Matière</span><select id="card-subject" aria-labelledby="card-subject-label">${subjectOptions(study.subject, true)}</select></label><div class="toolbar-actions">${availableCustomCards(state).length ? button(`${icon('cards', 17)} Mes cartes`, 'manage-cards', 'secondary') : ''}${link(`${icon('book', 17)} ${course ? 'Relire le chapitre' : 'Parcourir les cours'}`, course ? `cours/${course.id}` : 'cours', 'secondary')}${!study.subject || study.subject === 'maths' ? link(`${icon('math', 17)} Exercices de maths`, course ? `exercices/${course.id}` : 'exercices', 'secondary') : ''}</div></div>
+    <div class="study-toolbar"><div class="study-filters"><label class="field"><span id="card-subject-label">Matière</span><select id="card-subject" aria-labelledby="card-subject-label">${subjectOptions(study.subject, true)}</select></label><label class="field"><span id="card-scope-label">Chapitres à réviser</span><select id="card-scope" aria-labelledby="card-scope-label"><option value="worked">Chapitres travaillés</option><option value="all" ${worked ? '' : 'selected'}>Toute la collection</option></select></label></div><div class="toolbar-actions">${availableCustomCards(state).length ? button(`${icon('cards', 17)} Mes cartes`, 'manage-cards', 'secondary') : ''}${link(`${icon('book', 17)} ${course ? 'Relire le chapitre' : 'Parcourir les cours'}`, courseRoute, 'secondary')}${!study.subject || study.subject === 'maths' ? link(`${icon('math', 17)} Exercices de maths`, course ? `exercices/${course.id}` : 'exercices', 'secondary') : ''}</div></div>
     ${course ? `<div class="deck-filter"><strong>${course.title}</strong><a href="#flashcards">Voir tous les chapitres ${icon('close', 14)}</a></div>` : ''}
     <div class="review-modes" aria-label="Mode de révision">${button(`${icon('calendar', 16)} À revoir`, 'review-mode', 'secondary', `data-value="due" aria-pressed="${!practice}"`)}${button(`${icon('rotate', 16)} Entraînement libre`, 'review-mode', 'secondary', `data-value="practice" aria-pressed="${practice}"`)}</div>
     <div class="focus-layout">
@@ -377,7 +395,7 @@ export function flashcardsView(state, study) {
         ${card ? `<div class="deck-header"><span class="subject-tag ${subject.color}">${icon(subject.icon, 15)} ${subject.name}</span><span>${countLabel(queue.length, 'carte restante', 'cartes restantes')}</span></div>
         <button class="flashcard ${study.flipped ? 'revealed' : ''}" type="button" data-action="flip-card" aria-pressed="${study.flipped}"><span class="card-face">${study.flipped ? 'VERSO · RÉPONSE' : 'RECTO · QUESTION'}</span><span class="flashcard-text">${escapeHtml(study.flipped ? card.answer : card.question)}</span><span class="flip-hint">${icon('rotate', 16)} ${study.flipped ? 'Revoir la question' : 'Retourner la carte'}</span></button>
         ${study.flipped ? `<p class="rating-hint">Comment s’est passé le rappel ?</p><div class="ratings">${button(`${icon('close', 17)} Difficile`, 'grade-card', 'rating hard', 'data-value="hard"')}${button(`${icon('minus', 17)} Moyen`, 'grade-card', 'rating medium', 'data-value="medium"')}${button(`${icon('check', 17)} Facile`, 'grade-card', 'rating easy', 'data-value="easy"')}</div>${skillForCard(card) ? '<p class="rating-hint">« Difficile » et « Moyen » ouvrent tout de suite un exercice du même type.</p>' : ''}` : '<p class="rating-hint">Essaie de formuler la réponse avant de la lire.</p>'}`
-        : `<div class="empty-state">${tile(study.started ? 'check' : 'cards', 'purple')}<h2>${title}</h2><p>${cards.length ? `${countLabel(cards.length, 'carte')} ${practice ? 'dans la collection' : 'à revoir'}. Lance une série de ${Math.min(10, cards.length)}.` : nextReview}</p>${cards.length ? button(`${icon('play', 17)} ${study.started ? 'Relancer une série' : 'Commencer la révision'}`, 'start-review') : deck.length && !practice ? button(`${icon('rotate', 17)} Continuer en entraînement libre`, 'review-mode', 'primary', 'data-value="practice"') : link('Voir les cours', 'cours', 'secondary')}</div>`}
+        : `<div class="empty-state">${tile(study.started ? 'check' : 'cards', 'purple')}<h2>${title}</h2><p>${cards.length ? `${countLabel(cards.length, 'carte')} ${practice ? 'dans la collection' : 'à revoir'}. Lance une série de ${Math.min(10, cards.length)}.` : nextReview}</p>${cards.length ? button(`${icon('play', 17)} ${study.started ? 'Relancer une série' : 'Commencer la révision'}`, 'start-review') : deck.length && !practice ? button(`${icon('rotate', 17)} Continuer en entraînement libre`, 'review-mode', 'primary', 'data-value="practice"') : emptyAction}</div>`}
       </section>
       <div class="focus-aside">
         <section class="panel padded"><div class="panel-title">${tile('bolt', 'purple')}<div><h2>Bonus mémoire</h2><p>+20 XP toutes les 10 cartes faciles.</p></div></div>${bar(mastered % 10 / 10, 'Bonus mémoire')}<div class="quest-caption"><span>${mastered % 10} / 10</span><span>${countLabel(reviewed, 'carte révisée', 'cartes révisées')} aujourd’hui</span></div></section>
@@ -390,21 +408,21 @@ export function flashcardsView(state, study) {
 export function suggestedChallenge(state, currentId = '') {
   const answered = new Set(state.notes.map(item => item.course))
   const latest = latestCourse(state)
-  if (!currentId && latest && !answered.has(latest.id)) return latest
+  if (!currentId && latest && isCourseWorked(state, latest.id) && !answered.has(latest.id)) return latest
   const first = currentId ? courses.findIndex(course => course.id === currentId) + 1 : 0
-  const ordered = [...courses.slice(first), ...courses.slice(0, first)]
-  return ordered.find(course => course.id !== currentId && !answered.has(course.id)) ?? ordered[0]
+  const ordered = [...courses.slice(first), ...courses.slice(0, first)].filter(course => course.id !== currentId && isCourseWorked(state, course.id))
+  return ordered.find(course => !answered.has(course.id)) ?? ordered[0]
 }
 
 export function feynmanView(state, courseId, selectedId) {
   const notes = state.notes.filter(item => hasSubject(item.subject)).sort((first, second) => second.updatedAt - first.updatedAt)
   const legacyNote = notes.find(item => item.id === selectedId && !item.course)
   const course = legacyNote ? null : courseById.get(courseId) ?? suggestedChallenge(state)
-  const note = legacyNote ?? notes.find(item => item.course === course.id)
+  const note = legacyNote ?? (course && notes.find(item => item.course === course.id))
   const suggested = suggestedChallenge(state, course?.id)
   return `${heading('MÉTHODE FEYNMAN', 'Carnet Feynman', 'Relève un défi guidé et explique la notion avec des mots simples, comme à quelqu’un de 10 ans.')}
     <div class="focus-layout">
-      <section class="panel padded"><div class="panel-title">${tile('pen', 'mint')}<div><h2>${escapeHtml(course?.title ?? note.title)}</h2><p>${subjectById(course?.subject ?? note.subject).name} · ${course ? 'Défi guidé' : 'Ancienne explication'}</p></div></div>
+      ${course || note ? `<section class="panel padded"><div class="panel-title">${tile('pen', 'mint')}<div><h2>${escapeHtml(course?.title ?? note.title)}</h2><p>${subjectById(course?.subject ?? note.subject).name} · ${course ? 'Défi guidé' : 'Ancienne explication'}</p></div></div>
         ${course ? `<div class="guide-prompt"><strong>${escapeHtml(course.guide.prompt)}</strong><details><summary>Voir un indice</summary><p>${escapeHtml(course.guide.hint)}</p></details></div>` : ''}
         <form id="note-form" class="stack-form" data-id="${note?.id ?? ''}" data-course="${course?.id ?? ''}">
           <label class="field"><span id="note-body-label">${course ? '1. Ton explication' : 'Ton explication'}</span><textarea name="body" aria-labelledby="note-body-label" rows="5" maxlength="5000" placeholder="Explique l’idée en deux ou trois phrases avec tes mots…" required>${escapeHtml(note?.body)}</textarea></label>
@@ -413,11 +431,11 @@ export function feynmanView(state, courseId, selectedId) {
           <div class="toolbar-actions"><button class="btn primary" type="submit">${icon('check', 17)} Enregistrer</button>${note ? button(icon('trash', 18), 'delete-note', 'secondary icon-button', `data-value="${note.id}" aria-label="Supprimer cette note"`) : ''}</div>
         </form>
         ${course && note ? `<details class="guide-model"><summary>Comparer avec une explication possible</summary><p>${escapeHtml(course.guide.model)}</p><p>Vérifie que ton exemple aide à comprendre, puis reprends ta réponse si nécessaire.</p></details>` : ''}
-      </section>
+      </section>` : `<section class="panel empty-state">${tile('pen', 'mint')}<h2>Choisis les notions à réviser</h2><p>Indique les chapitres travaillés pour recevoir un défi adapté.</p>${link('Indiquer mes chapitres', 'cours')}</section>`}
       <div class="focus-aside">
         <section class="panel padded"><div class="panel-title">${tile('spark', 'mint')}<div><h2>Choisir un défi</h2><p>Une notion proposée dans chaque chapitre</p></div></div>
-          <label class="field"><span id="challenge-label">Notion à expliquer</span><select id="challenge-course" aria-labelledby="challenge-label"><option value="" ${course ? '' : 'selected'} disabled>Choisir un chapitre</option>${subjects.filter(subject => courses.some(item => item.subject === subject.id)).map(subject => `<optgroup label="${subject.name}">${courses.filter(item => item.subject === subject.id).map(item => `<option value="${item.id}" ${course?.id === item.id ? 'selected' : ''}>${item.title}</option>`).join('')}</optgroup>`).join('')}</select></label>
-          <div class="reader-links">${link(`Autre défi ${icon('arrow', 17)}`, `feynman/${suggested.id}`, 'secondary')}${course ? link(`${icon('book', 17)} Relire le cours`, `cours/${course.id}`, 'secondary') : ''}</div>
+          <label class="field"><span id="challenge-label">Notion à expliquer</span><select id="challenge-course" aria-labelledby="challenge-label"><option value="" ${course ? '' : 'selected'} disabled>Choisir un chapitre</option>${subjects.filter(subject => courses.some(item => item.subject === subject.id)).map(subject => `<optgroup label="${subject.name}">${courses.filter(item => item.subject === subject.id).map(item => `<option value="${item.id}" ${course?.id === item.id ? 'selected' : ''}>${item.title}${isCourseWorked(state, item.id) ? '' : ' · à découvrir'}</option>`).join('')}</optgroup>`).join('')}</select></label>
+          <div class="reader-links">${suggested ? link(`Autre défi ${icon('arrow', 17)}`, `feynman/${suggested.id}`, 'secondary') : ''}${course ? link(`${icon('book', 17)} Relire le cours`, `cours/${course.id}`, 'secondary') : ''}</div>
         </section>
         <section class="panel padded"><div class="panel-title">${tile('book', 'purple')}<div><h2>Mes notes</h2><p>${countLabel(notes.length, 'explication')}</p></div></div>
           ${notes.length ? `<ul class="item-list">${notes.map(item => `<li>${button(`<span><strong>${escapeHtml(item.title)}</strong><small>${subjectById(item.subject)?.name} · ${shortDate.format(item.updatedAt)}</small></span>${icon('chevron', 17)}`, 'open-note', 'list-button', `data-value="${item.id}" aria-pressed="${item.id === note?.id}"`)}</li>`).join('')}</ul>` : '<p>Tes explications enregistrées apparaîtront ici.</p>'}

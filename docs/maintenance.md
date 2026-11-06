@@ -16,9 +16,9 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 
 | Parcours | Vérification |
 | --- | --- |
-| Cours | Chercher une notion, ouvrir la correction, marquer le chapitre comme lu et retrouver cet état après rechargement. |
+| Cours | Marquer un chapitre comme travaillé depuis la liste et un autre depuis sa fiche. Vérifier le filtre « Travaillés », remettre un chapitre à « Pas encore » et retrouver les statuts après rechargement. |
 | Maths | Entrer une réponse fausse, lire la correction, comparer les valeurs de la variante suivante et réussir deux variantes de suite. En mode mixte, l’exercice suivant porte sur une autre compétence. |
-| Flashcards | Vérifier qu’une carte de maths fournie marquée « Difficile » ouvre la reprise ciblée. Vérifier sur une autre matière que le rappel espacé conserve sa date après un passage en entraînement libre. |
+| Flashcards | Vérifier que les deux modes de révision sélectionnent les chapitres travaillés, puis ouvrir « Toute la collection ». Vérifier qu’une carte de maths marquée « Difficile » ouvre la reprise ciblée. |
 | Feynman | Enregistrer une explication et un exemple, ouvrir la réponse proposée et recharger pour retrouver le texte. |
 | Focus | Choisir une matière et vérifier que le démarrage ouvre l’activité proposée. Naviguer, suspendre puis reprendre depuis le minuteur flottant et vérifier qu’une réponse en cours reste saisie. Terminer le Pomodoro pour vérifier le gain de 50 XP et le démarrage de la pause depuis une autre page. |
 | Mobile | Ouvrir les écrans modifiés à 320 et 390 pixels de large et vérifier l’accès aux commandes et l’absence de défilement horizontal. |
@@ -38,6 +38,8 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 | `server.mjs`, `build.mjs` | Serveur local et préparation du site statique. |
 
 Les données d’étude sont stockées dans `localStorage` sous la clé `focusbro:v1`. Lorsqu’un champ est ajouté, complète l’état de départ et vérifie le chargement d’une sauvegarde antérieure. Conserve les identifiants utilisés dans les sauvegardes et les liens vers les cours.
+
+Le choix explicite d’un chapitre est conservé dans `reading[id].worked`. En l’absence de choix explicite, un chapitre déjà marqué comme lu est considéré comme travaillé. Les révisions par défaut suivent ce périmètre. Les cartes personnelles sans chapitre sont accessibles dans « Toute la collection ».
 
 Le Pomodoro garde l’activité choisie dans `timer.activity`. Le lancement ouvre sa route interne, et les commandes du minuteur fonctionnent indépendamment de la page affichée. Le minuteur flotte sur ordinateur et reste dans l’en-tête fixe sur mobile. Une reprise laisse l’élève sur la page qu’il utilise.
 

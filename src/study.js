@@ -1,6 +1,6 @@
 import { hasSubject, starterCards } from './content.js'
 import { courseCards } from './courses.js'
-import { createMathPractice } from './math-practice.js'
+import { createMathPractice, mathContext } from './math-practice.js'
 
 export const storageKey = 'focusbro:v1'
 export const durations = { focus: 25 * 60_000, break: 5 * 60_000 }
@@ -116,9 +116,22 @@ export function gradeCard(state, card, grade, now = Date.now()) {
   return xp
 }
 
+export function isCourseWorked(state, id) {
+  const progress = state.reading[id]
+  return progress?.worked ?? Boolean(progress?.completedAt)
+}
+
+export function mathReviewContext(state, detail = '') {
+  const context = mathContext(detail)
+  if (context.key !== 'mix' || detail === 'tous') return context
+  return { ...context, key: 'worked', options: context.options.filter(skill => isCourseWorked(state, skill.course)) }
+}
+
 export function reviewCards(state, study, mode = study.mode) {
   const cards = mode === 'practice' ? allCards(state) : dueCards(state)
-  return cards.filter(card => (!study.subject || card.subject === study.subject) && (!study.course || card.course === study.course))
+  return cards.filter(card => (!study.subject || card.subject === study.subject)
+    && (!study.course || card.course === study.course)
+    && (study.scope === 'all' || (card.course && isCourseWorked(state, card.course))))
 }
 
 export function weekActivity(state, now = Date.now()) {

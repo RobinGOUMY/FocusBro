@@ -1,14 +1,16 @@
 import { hasSubject } from './content.js'
 import { courses } from './courses.js'
 import { mathSkills } from './math-practice.js'
-import { reviewCards } from './study.js'
+import { isCourseWorked, reviewCards } from './study.js'
 
 export function focusActivities(state, subject = state.timer.subject) {
   if (!hasSubject(subject)) return []
 
   const options = []
-  if (subject === 'maths') {
-    const pending = mathSkills.find(skill => state.mathPractice.skills[skill.id]?.recovery)
+  const chapters = courses.filter(course => course.subject === subject)
+  const worked = chapters.filter(course => isCourseWorked(state, course.id))
+  if (subject === 'maths' && worked.length) {
+    const pending = mathSkills.find(skill => isCourseWorked(state, skill.course) && state.mathPractice.skills[skill.id]?.recovery)
     options.push({
       kind: 'exercise', label: 'Exercices de maths', icon: 'math',
       title: pending?.name ?? 'Un exercice de maths à résoudre',
@@ -18,14 +20,12 @@ export function focusActivities(state, subject = state.timer.subject) {
   }
 
   const cards = reviewCards(state, { subject }, 'practice')
-  const due = reviewCards(state, { subject }, 'due')
   const review = cards.length ? {
     kind: 'cards', label: 'Flashcards', icon: 'cards', title: 'Une série de flashcards',
-    detail: 'Retrouve la réponse de mémoire, puis retourne la carte.', route: `flashcards/${subject}`,
+    detail: 'Révise les chapitres que tu as indiqués comme travaillés.', route: `flashcards/${subject}`,
   } : null
-  if (review && due.some(card => state.schedule[card.id]?.due)) options.push(review)
+  if (review) options.push(review)
 
-  const chapters = courses.filter(course => course.subject === subject)
   const unread = chapters.filter(course => !state.reading[course.id]?.completedAt)
   const openedAt = course => state.reading[course.id]?.openedAt ?? 0
   const lesson = unread.sort((a, b) => openedAt(b) - openedAt(a))[0]
@@ -34,10 +34,8 @@ export function focusActivities(state, subject = state.timer.subject) {
     kind: 'course', label: 'Lire un cours', icon: 'book', title: lesson.title,
     detail: 'Lis le chapitre, puis essaie l’exercice avant d’ouvrir la correction.', route: `cours/${lesson.id}`,
   })
-  if (review && !options.includes(review)) options.push(review)
-
   const answered = new Set(state.notes.map(note => note.course))
-  const challenge = chapters.find(course => !answered.has(course.id)) ?? lesson
+  const challenge = worked.find(course => !answered.has(course.id)) ?? worked[0]
   if (challenge) options.push({
     kind: 'feynman', label: 'Défi Feynman', icon: 'pen', title: challenge.title,
     detail: 'Réponds à la question guidée avec tes mots et invente un exemple.', route: `feynman/${challenge.id}`,

@@ -3,13 +3,13 @@ import { hasSubject } from './content.js'
 import { courseById } from './courses.js'
 import { focusActivity } from './focus-activities.js'
 import { advanceMathTrack, beginMathTrack, mathContext, recordMathAttempt, skillForCard } from './math-practice.js'
-import { createState, dayKey, freshTimer, gradeCard, levelInfo, remainingTime, restoreState, reviewCards, settleTimer, storageKey, studyStats } from './study.js'
+import { createState, dayKey, freshTimer, gradeCard, isCourseWorked, levelInfo, mathReviewContext, remainingTime, restoreState, reviewCards, settleTimer, storageKey, studyStats } from './study.js'
 import { cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, profileView, progressView, readerView, suggestedChallenge } from './views.js'
 
 const app = document.querySelector('#app')
 const dialog = document.querySelector('#dialog')
 const toast = document.querySelector('#toast')
-const study = { subject: '', course: '', mode: 'due', queue: [], started: false, flipped: false }
+const study = { subject: '', course: '', mode: 'due', scope: 'worked', queue: [], started: false, flipped: false }
 const library = { subject: '', query: '', filter: 'all' }
 const pageFromUrl = () => pages.find(page => page.id === location.hash.slice(1).split('/')[0])?.id ?? 'accueil'
 const routeDetail = () => location.hash.split('/')[1] ?? ''
@@ -19,7 +19,7 @@ let page = pageFromUrl()
 let selectedNote = ''
 let challengeId = ''
 let currentCourse
-let exerciseContext = mathContext()
+let exerciseContext = mathReviewContext(state)
 let returnToCards = ''
 let sound = 'off'
 let focusChoice = ''
@@ -215,7 +215,7 @@ async function startTimer() {
     if (opening) {
       current.activity = focusActivity(next, choice)
       if (current.activity.kind === 'exercise') {
-        const context = mathContext(current.activity.route.split('/')[1])
+        const context = mathReviewContext(next, current.activity.route.split('/')[1])
         const track = next.mathPractice.tracks[context.key]
         if (track?.result) advanceMathTrack(next.mathPractice, context, track.current)
       }
@@ -232,7 +232,7 @@ async function startTimer() {
 function openFocusActivity(newSession = false) {
   const activity = state.timer.phase === 'focus' && focusActivity(state, focusChoice)
   if (!activity?.route) return false
-  if (newSession && activity.kind === 'cards') resetReview({ subject: '', course: '' })
+  if (newSession && activity.kind === 'cards') resetReview({ subject: '', course: '', scope: 'worked' })
   location.hash = activity.route
   return true
 }
@@ -263,6 +263,13 @@ function stopTimer() {
 
 function resetReview(selection = {}) {
   Object.assign(study, { queue: [], started: false, flipped: false }, selection)
+}
+
+function syncReviewQueue() {
+  const previousCard = study.queue[0]
+  const available = new Set(reviewCards(state, study).map(card => card.id))
+  study.queue = study.queue.filter(id => available.has(id))
+  if (study.queue[0] !== previousCard) study.flipped = false
 }
 
 function shuffle(cards) {
@@ -336,7 +343,7 @@ async function submitMath(values, formId) {
   const context = exerciseContext
   const current = state.mathPractice.tracks[context.key]?.current
   if (!current || (formId && `${current.skill}:${current.seed}` !== formId)) return
-  const result = await commit(next => recordMathAttempt(next.mathPractice, context, current, values, dayKey()))
+  const result = await commit(next => recordMathAttempt(next.mathPractice, context.key === 'worked' ? mathReviewContext(next) : context, current, values, dayKey()))
   if (page !== 'exercices' || exerciseContext.key !== context.key) return
   if (result === 'invalid') {
     app.querySelector('#math-input-error').hidden = false
@@ -350,7 +357,7 @@ async function nextMath() {
   const context = exerciseContext
   const current = state.mathPractice.tracks[context.key]?.current
   if (!current) return
-  await commit(next => advanceMathTrack(next.mathPractice, context, current))
+  await commit(next => advanceMathTrack(next.mathPractice, context.key === 'worked' ? mathReviewContext(next) : context, current))
   if (page !== 'exercices' || exerciseContext.key !== context.key) return
   render({ focus: '#math-question' })
   app.querySelector('#math-question')?.scrollIntoView({ block: 'nearest' })
@@ -402,6 +409,21 @@ const actions = {
   'review-mode': ({ value }) => {
     resetReview({ mode: value })
     render({ focus: `[data-action="review-mode"][data-value="${value}"]` })
+  },
+  'mark-worked': async ({ value }) => {
+    if (!courseById.has(value)) return
+    const worked = await commit(next => {
+      const worked = !isCourseWorked(next, value)
+      next.reading[value] = { ...next.reading[value], worked }
+      return worked ? 'added' : 'removed'
+    })
+    syncReviewQueue()
+    render({ preserveForm: true })
+    const toggle = app.querySelector(`[data-action="mark-worked"][data-value="${value}"]`)
+    const fallback = page === 'flashcards' ? app.querySelector('[data-action="start-review"]') ?? app.querySelector('#card-scope') : app.querySelector('#course-filter')
+    const control = toggle ?? fallback
+    control?.focus({ preventScroll: true })
+    notify(worked === 'added' ? 'Chapitre ajouté à tes révisions' : 'Chapitre marqué « Pas encore »')
   },
   'mark-course': async () => {
     if (!currentCourse) return
@@ -492,6 +514,9 @@ app.addEventListener('change', async event => {
     history.replaceState(null, '', value ? `#flashcards/${value}` : '#flashcards')
     resetReview({ subject: value, course: '' })
     render({ focus: '#card-subject' })
+  } else if (id === 'card-scope') {
+    resetReview({ scope: value })
+    render({ focus: '#card-scope' })
   } else if (id === 'course-filter') {
     library.filter = value
     document.querySelector('#course-results').innerHTML = courseResults(state, library.subject, library.query, library.filter)
@@ -578,27 +603,30 @@ async function navigate(initial = false) {
     if ((chapter?.id ?? '') !== study.course || (detail && subject !== study.subject)) {
       resetReview({ course: chapter?.id ?? '', subject, mode: 'due' })
     }
+    syncReviewQueue()
     const timer = state.timer
     if (timer.phase === 'focus' && timer.status !== 'ready' && timer.activity?.route === `flashcards/${detail}` && !study.started) {
+      study.scope = 'worked'
       study.mode = reviewCards(state, study, 'due').length ? 'due' : 'practice'
       prepareReview()
     }
   }
   if (page === 'feynman') {
     selectedNote = ''
-    challengeId = courseById.has(detail) ? detail : suggestedChallenge(state).id
+    challengeId = courseById.has(detail) ? detail : suggestedChallenge(state)?.id ?? ''
   }
   if (page === 'exercices') {
     const [, , origin, deck] = location.hash.split('/')
-    exerciseContext = mathContext(detail)
+    exerciseContext = mathReviewContext(state, detail)
     returnToCards = origin === 'cartes' ? (courseById.has(deck) || hasSubject(deck) ? `flashcards/${deck}` : 'flashcards') : ''
     const restart = origin === 'variante' && Boolean(exerciseContext.skill)
     if (restart) history.replaceState(null, '', `#exercices/${detail}`)
     const context = exerciseContext
     const source = restart ? courseById.get(context.course).exercise.question : ''
-    if (restart || !state.mathPractice.tracks[context.key]) {
-      await commit(next => beginMathTrack(next.mathPractice, context, { source, restart }))
+    if (restart || needsMathTrack(context)) {
+      await commit(next => beginMathTrack(next.mathPractice, mathReviewContext(next, detail), { source, restart }))
       if (page !== 'exercices' || exerciseContext.key !== context.key) return
+      exerciseContext = mathReviewContext(state, detail)
     }
   }
   if (page !== 'focus' && state.timer.status === 'ready' && sound !== 'off') {
@@ -617,7 +645,12 @@ async function navigate(initial = false) {
 
 window.addEventListener('hashchange', () => { void navigate() })
 
-window.addEventListener('storage', event => {
+function needsMathTrack(context) {
+  const current = state.mathPractice.tracks[context.key]?.current
+  return context.options.length > 0 && !context.options.some(skill => skill.id === current?.skill)
+}
+
+window.addEventListener('storage', async event => {
   if (event.key !== storageKey) return
   const previousTimer = state.timer
   state = readState() ?? createState()
@@ -626,10 +659,18 @@ window.addEventListener('storage', event => {
     setAmbience(sound, state.profile.volume)
   }
   setVolume(state.profile.volume)
-  const previousCard = study.queue[0]
-  const due = new Set(reviewCards(state, study).map(card => card.id))
-  study.queue = study.queue.filter(id => due.has(id))
-  if (study.queue[0] !== previousCard) study.flipped = false
+  syncReviewQueue()
+  if (page === 'feynman' && !selectedNote && !routeDetail() && !isCourseWorked(state, challengeId)) {
+    challengeId = suggestedChallenge(state)?.id ?? ''
+  }
+  if (page === 'exercices' && exerciseContext.key === 'worked') {
+    exerciseContext = mathReviewContext(state)
+    if (needsMathTrack(exerciseContext)) {
+      await commit(next => beginMathTrack(next.mathPractice, mathReviewContext(next)))
+      if (page !== 'exercices' || exerciseContext.key !== 'worked') return
+      exerciseContext = mathReviewContext(state)
+    }
+  }
   render({ preserveForm: true })
 })
 
