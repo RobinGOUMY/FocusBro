@@ -2,15 +2,17 @@
 
 FocusBro est un espace de révision pour la Seconde générale et technologique. Il réunit une bibliothèque de cours, des exercices de maths adaptatifs, un minuteur Pomodoro, des flashcards à répétition espacée et un carnet Feynman guidé.
 
-## Lancer l’application
+## Installer et lancer en local
 
-Il suffit d’avoir Node.js 20 ou plus récent.
+Installe Git et Node.js 20 ou plus récent, puis exécute ces commandes dans un terminal.
 
 ```sh
+git clone https://github.com/RobinGOUMY/FocusBro.git
+cd FocusBro
 npm run dev
 ```
 
-Ouvre [FocusBro en local](http://127.0.0.1:4173/). Le serveur utilise uniquement Node.js.
+Ouvre [FocusBro en local](http://127.0.0.1:4173/). Les modules intégrés à Node.js suffisent pour lancer le serveur. Pour relancer FocusBro plus tard, ouvre un terminal dans le dossier `FocusBro` et exécute `npm run dev`.
 
 Pour vérifier ou modifier le projet, consulte le [guide de maintenance](docs/maintenance.md). `npm run check` vérifie le code et `npm run build` prépare les fichiers statiques dans `dist/`.
 
