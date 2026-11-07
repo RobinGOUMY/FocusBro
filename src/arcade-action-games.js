@@ -2,12 +2,12 @@ import { shuffle } from './study.js'
 
 export const actionModes = ['slice', 'snake', 'runner', 'sling']
 export const snakeSize = 7
-export const runnerDuration = 6_500
+export const runnerDuration = 4_200
 export const shotDuration = 680
 
 const fruitsPerWave = 3
-const fruitFlight = 2_200
-const fruitDelays = [0, 210, 420, 2_000, 2_210, 2_420]
+const fruitFlight = 4_400
+const fruitDelays = [0, 600, 1_200, 4_400, 5_000, 5_600]
 const snakeDelay = 390
 const directions = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] }
 

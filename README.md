@@ -23,6 +23,8 @@ Pour vérifier ou modifier le projet, consulte le [guide de maintenance](docs/ma
 
 ## Réviser
 
+Les consignes et les explications utilisent des textes de 15 à 16 pixels, avec un contraste renforcé sur les palettes claires et sombres.
+
 - **Accueil**. Lance un Pomodoro ou reprends directement l’activité en cours. Suis ton objectif de 25 minutes et retrouve le dernier cours ouvert ou les flashcards à revoir dans « À suivre ».
 - **Focus**. Choisis une matière et lance l’activité proposée. FocusBro utilise tes chapitres travaillés pour proposer des révisions et te suggère un cours quand tu commences une matière. Le minuteur flottant permet de suivre les 25 minutes, de suspendre la session ou de la reprendre depuis chaque page. Une session terminée rapporte 50 XP et propose une pause de cinq minutes. Les ambiances sonores se règlent dans la page Focus.
 - **Cours**. Explore 84 chapitres courts. Recherche un thème ou filtre les chapitres par avancement. Indique « Travaillé » pour ceux déjà vus en classe ou à la maison. Clique à nouveau pour les remettre à « Pas encore ». Un chapitre marqué comme lu rejoint tes révisions par défaut. Tu peux régler son statut séparément.
@@ -33,9 +35,9 @@ Pour vérifier ou modifier le projet, consulte le [guide de maintenance](docs/ma
   - **Quiz en vol**. Lis la question avant de décoller. Appuie sur Espace ou touche la zone de vol pour battre des ailes et traverse la porte de la bonne réponse. Tu peux aussi choisir directement une réponse avec l’option sans pilotage.
   - **Sprint cérébral**. Tu as 45 secondes pour répondre à une série de questions. Les bonnes réponses consécutives font monter le combo. Le chrono s’arrête pendant les corrections et reprend à la question suivante.
   - **Mémo Duo**. Associe les questions aux réponses sur un plateau de 8 à 20 cartes. Il mélange les questions de l’Arcade et les flashcards des chapitres choisis. Chaque erreur coûte 15 points et les paires trouvées restent visibles.
-  - **Tranche-Méninges**. Fais glisser le doigt ou la souris sur les mots et les nombres qui suivent la règle affichée. Tu as trois vies pour éviter les intrus.
+  - **Tranche-Méninges**. Fais glisser le doigt ou la souris sur les mots et les nombres qui suivent la règle affichée. Chaque objet reste en vol 4,4 secondes et une manche complète dure 10 secondes. Tu as trois vies pour éviter les intrus.
   - **Snake en ordre**. Dirige le serpent avec les flèches ou les boutons. Mange les éléments dans l’ordre demandé. Une mauvaise bouchée termine la partie et affiche la correction.
-  - **Rail Express**. Lis la phrase en anglais ou en espagnol. Change de voie avec les flèches gauche et droite ou les boutons de traduction pour passer par la bonne porte.
+  - **Rail Express**. Lis la phrase en anglais ou en espagnol. Tu as 4,2 secondes avant l’arrivée de chaque obstacle. Change de voie avec les flèches gauche et droite ou les boutons de traduction pour passer par la bonne porte.
   - **Siège du savoir**. Choisis la tour de la bonne réponse et tire. Tu peux aussi armer le lance-pierre en glissant sur le terrain puis en relâchant. Un bon tir fait tomber le château.
 - **Missions du jour**. Depuis l’accueil ou le menu « Butin » sur mobile, retrouve trois défis qui suivent tes révisions. Un Pomodoro rapporte 35 jetons. Deux autres défis tournent entre flashcards, Arcade, cours, maths et Feynman, pour 20 jetons chacun. Récupère les récompenses avant minuit, à l’heure de ton appareil. Les trois réunies ajoutent un bonus de 25 jetons.
 - **Boutique Focus**. Dépense tes jetons dans cinq collections de six objets. Les raretés Commun, Rare, Épique, Légendaire et Mythique ont chacune leur couleur. Combine les filtres de type et de rareté pour choisir ton prochain achat. Les prix vont de 150 à 7 500 jetons et l’XP ouvre l’accès aux pièces de prestige. Avec 100 jetons pour une journée complète de missions, un objet mythique représente entre 50 et 75 journées d’épargne depuis zéro.

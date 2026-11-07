@@ -30,6 +30,7 @@ Vérifie en plus les parcours concernés dans un navigateur. Pour une modificati
 | Comptes | Créer un compte après avoir gagné de l’XP en invité. Dans un deuxième navigateur, vérifier une tentative de connexion incorrecte, puis retrouver les données du compte. Modifier la progression hors ligne, reconnecter les deux appareils, vérifier la détection d’un conflit et tester les deux choix. Se déconnecter et retrouver la sauvegarde invitée. |
 | Arcade | En invité sans historique, vérifier que les jeux attendent des chapitres travaillés. Marquer un chapitre depuis l’Arcade et retrouver ce statut dans les cours et les flashcards. Vérifier le filtre par matière et le choix explicite « Toute la collection ». En vol, tester les portes, les collisions et le mode sans pilotage. Dans le sprint, vérifier la pause, le combo, les corrections et la fin du chrono. Dans Mémo Duo, vérifier un plateau de 20 cartes, un mauvais essai et la fin de partie. |
 | Jeux d’action | Dans Tranche-Méninges, balayer des cibles et trancher trois intrus. Dans Snake, tester un mauvais ordre et une série complète. Dans Rail Express, changer de voie au clavier et au toucher puis vérifier la correction. Dans Siège du savoir, tirer avec les boutons et au glisser, puis vérifier l’effondrement et le rebond. Contrôler les records, le plafond d’XP et la progression de mission après le plafond. |
+| Rythme et lisibilité | Vérifier que chaque objet de Tranche-Méninges reste en vol 4,4 secondes et qu’une manche expire au bout de 10 secondes. Dans Rail Express, vérifier le passage de porte après 4,2 secondes et la conservation du délai pendant une pause. Lire les consignes et corrections sur les pages de révision, dans l’Arcade et dans la boutique avec une palette claire et une palette sombre, à 320 et 390 pixels de large. |
 | Mobile | Ouvrir les écrans modifiés à 320 et 390 pixels de large et vérifier l’accès aux commandes et l’absence de défilement horizontal. |
 
 ## Structure
@@ -81,6 +82,10 @@ La refonte s’appuie sur les exemples publics de Mobbin pour rendre l’action 
 
 La police variable Manrope est servie depuis `assets/manrope.woff2` avec sa licence dans `assets/manrope-license.txt`. [Manrope sur Google Fonts](https://fonts.google.com/specimen/Manrope)
 
+Les paragraphes de consigne et d’explication utilisent généralement 15 à 16 pixels et un interligne de 1,6 ou plus, y compris sur mobile. Les textes de cours utilisent la couleur principale de la palette. Les variables `--muted` et `--quiet` fournissent un contraste renforcé aux informations secondaires. Vérifie aussi les palettes claires lors d’un changement de ces variables.
+
+Les durées de l’Arcade sont définies dans `src/arcade-action-games.js`. Tranche-Méninges utilise un vol de 4 400 ms et des départs répartis sur 5 600 ms. La durée d’une manche complète se déduit du dernier départ et du temps de vol. Rail Express partage sa durée de 4 200 ms entre la logique du passage de porte et la barre de temps.
+
 Lorsqu’une matière est retirée du catalogue, la progression acquise compte dans les totaux. Les cartes, notes et entrées d’historique de cette matière sont masquées. Une session de focus déjà lancée reprend sous « Autre matière ».
 
 ## Ajouter ou corriger du contenu
@@ -115,3 +120,5 @@ node --env-file=.env.local server.mjs
 Applique le schéma avec `db/migrate.mjs` avant le premier déploiement sur une nouvelle base. L’API hache les mots de passe avec scrypt, limite les tentatives et authentifie les requêtes par un cookie de session. Elle n’expose jamais `DATABASE_URL` au navigateur.
 
 Le mode invité conserve `focusbro:v1`. Un compte utilise une copie locale séparée et une révision enregistrée dans Neon. La synchronisation vérifie cette révision avant d’écrire et propose un choix si deux appareils ont modifié des versions différentes. Une erreur réseau laisse les modifications en attente sur l’appareil.
+
+Pour examiner toutes les personnalisations, utilise un compte de test préchargé au palier final de 4 200 XP, avec les identifiants du catalogue dans `shop.owned`. Ce profil peut également sélectionner tous les chapitres pour tester les jeux. Ses identifiants de connexion se conservent dans un fichier privé local.

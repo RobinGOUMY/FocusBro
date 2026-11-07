@@ -7,8 +7,8 @@
   --raised: #222944;
   --line: color-mix(in srgb, var(--text) 8%, var(--raised));
   --text: #f2f4ff;
-  --muted: #b5bdd7;
-  --quiet: #aab4d4;
+  --muted: #d0d6eb;
+  --quiet: #bcc5e0;
   --accent: #b9c1ff;
   --accent-hover: color-mix(in srgb, var(--accent) 72%, white);
   --accent-ink: #151927;
@@ -34,8 +34,8 @@
   color-scheme: light;
   --line: color-mix(in srgb, var(--text) 20%, var(--raised));
   --text: #232939;
-  --muted: #465164;
-  --quiet: #4e5a70;
+  --muted: #343d4f;
+  --quiet: #414b60;
   --accent-hover: color-mix(in srgb, var(--accent) 84%, black);
   --accent-ink: white;
   --purple: #523b94;
