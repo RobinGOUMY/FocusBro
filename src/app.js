@@ -110,7 +110,7 @@ function render({ preserveForm = false, focus } = {}) {
     feynman: () => feynmanView(state, challengeId, selectedNote),
     arcade: () => arcade.view(state),
     pass: () => routeDetail() === 'themes' ? themeGalleryView(state) : passView(state),
-    boutique: () => routeDetail() === 'missions' ? missionsView(state) : shopView(state, routeDetail()),
+    boutique: () => routeDetail() === 'missions' ? missionsView(state) : shopView(state, routeDetail(), location.hash.split('/')[2]),
     progression: () => progressView(state),
     profil: () => profileView(state, cloud.info()),
   }[page]()
@@ -553,6 +553,10 @@ app.addEventListener('input', event => {
 app.addEventListener('change', async event => {
   if (arcade.change(event.target)) return
   const { id, value } = event.target
+  if (id === 'shop-rarity') {
+    location.hash = `boutique/${event.target.dataset.category}${value ? `/${value}` : ''}`
+    return
+  }
   if (id === 'timer-subject') {
     const changed = await commit(next => {
       if (next.timer.status !== 'ready' || next.timer.phase !== 'focus' || !hasSubject(value)) return false

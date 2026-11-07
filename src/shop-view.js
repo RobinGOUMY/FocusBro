@@ -1,5 +1,5 @@
 import { dailyBonus, dailyMissions } from './missions.js'
-import { cosmeticCategories, cosmeticTypes, ownsCosmetic, shopCollections, shopItems } from './pass.js'
+import { cosmeticCategories, cosmeticTypes, ownsCosmetic, shopCollections, shopItems, shopRarities } from './pass.js'
 import { studyStats } from './study.js'
 import { button, cosmeticArt, heading, icon, link, tile } from './views.js'
 
@@ -58,6 +58,7 @@ export function missionsView(state) {
 }
 
 function shopCard(item, collection, state, xp) {
+  const rarity = shopRarities[item.rarity]
   const owned = ownsCosmetic(state, item, xp)
   const active = state.profile[item.type] === item.id
   const xpLocked = xp < item.xp
@@ -68,12 +69,13 @@ function shopCard(item, collection, state, xp) {
       : missing ? `Il te manque ${tokensLabel(missing)}` : 'Disponible'
   const action = owned ? (active ? 'Équipé' : 'Équiper') : xpLocked ? 'Verrouillé' : 'Acheter'
   const attributes = `data-type="${item.type}" data-value="${item.id}" aria-label="${action} · ${item.label}" aria-describedby="shop-status-${item.id}"`
-  return `<article class="panel shop-card" data-collection="${collection.palette}">
+  return `<article class="panel shop-card" data-collection="${collection.palette}" data-rarity="${item.rarity}">
     <div class="shop-card-art">
       ${cosmeticArt(item)}
       <span class="shop-card-tag">${cosmeticTypes[item.type]}</span>
     </div>
     <div class="shop-card-content">
+      <span class="shop-rarity-label">${icon(rarity.icon, 14)} ${rarity.label}</span>
       <span class="shop-card-collection">${collection.name}</span>
       <h3>${item.label}</h3>
       <p id="shop-status-${item.id}">${status}</p>
@@ -87,21 +89,38 @@ function shopCard(item, collection, state, xp) {
   </article>`
 }
 
-export function shopView(state, detail) {
+export function shopView(state, detail, rarityDetail = '') {
   const { xp } = studyStats(state)
   const filter = Object.hasOwn(cosmeticCategories, detail) ? detail : ''
-  const cards = collection => collection.items.filter(item => !filter || filter === item.type)
+  const rarity = Object.hasOwn(shopRarities, rarityDetail) ? rarityDetail : ''
+  const matches = item => (!filter || filter === item.type) && (!rarity || rarity === item.rarity)
+  const count = shopItems.filter(matches).length
+  const categoryRoute = category => `boutique${category || rarity ? `/${category || 'tout'}` : ''}${rarity ? `/${rarity}` : ''}`
+  const cards = collection => collection.items.filter(matches)
     .map(item => shopCard(item, collection, state, xp)).join('')
   return `${lootHeader(state, false)}
+    <section class="shop-rarity-guide" aria-label="Les cinq raretés">
+      ${Object.entries(shopRarities).map(([id, entry]) => {
+        const minimum = Math.min(...shopItems.filter(item => item.rarity === id).map(item => item.price))
+        return `<div data-rarity="${id}">${icon(entry.icon, 19)}<strong>${entry.label}</strong><small>Dès ${tokensLabel(minimum)}</small></div>`
+      }).join('')}
+    </section>
     <div class="loot-section-heading shop-heading">
-      <div><p class="section-kicker">${shopItems.length} OBJETS À COLLECTIONNER</p><h2>${filter ? cosmeticCategories[filter] : 'Les collections'}</h2></div>
+      <div><p class="section-kicker">${count} OBJETS À COLLECTIONNER</p><h2>${filter ? cosmeticCategories[filter] : rarity ? `Objets ${shopRarities[rarity].label.toLocaleLowerCase('fr')}s` : 'Les collections'}</h2></div>
       <span class="loot-chip">${icon('bolt', 16)} ${number.format(xp)} XP au total</span>
     </div>
-    <nav class="shop-filters" aria-label="Filtrer les objets">
-      ${tab('boutique', 'Tout', !filter)}
-      ${Object.entries(cosmeticCategories).map(([type, label]) => tab(`boutique/${type}`, label, type === filter)).join('')}
-    </nav>
-    ${filter ? `<div class="shop-grid">${shopCollections.map(cards).join('')}</div>` : shopCollections.map(collection => `
+    <div class="shop-filter-toolbar">
+      <nav class="shop-filters" aria-label="Filtrer les objets">
+        ${tab(categoryRoute(''), 'Tout', !filter)}
+        ${Object.entries(cosmeticCategories).map(([type, label]) => tab(categoryRoute(type), label, type === filter)).join('')}
+      </nav>
+      <label class="field shop-rarity-filter"><span>Rareté</span><select id="shop-rarity" data-category="${filter || 'tout'}">
+        <option value="">Toutes les raretés</option>
+        ${Object.entries(shopRarities).map(([id, entry]) => `<option value="${id}" ${rarity === id ? 'selected' : ''}>${entry.label}</option>`).join('')}
+      </select></label>
+    </div>
+    ${!count ? `<section class="panel padded shop-empty"><h3>Aucun objet pour ces filtres</h3><p>Choisis une autre rareté ou explore les collections.</p>${link('Tous les objets', 'boutique', 'secondary')}</section>`
+      : filter || rarity ? `<div class="shop-grid">${shopCollections.map(cards).join('')}</div>` : shopCollections.map(collection => `
       <section class="shop-collection">
         <div class="shop-collection-heading" data-collection="${collection.palette}">
           <span class="shop-collection-mark">${icon('spark', 19)}</span>

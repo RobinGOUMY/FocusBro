@@ -40,42 +40,58 @@ export const levels = milestones.map(([xp, title, items], index) => ({
 
 export const passCosmetics = levels.flatMap(level => level.rewards)
 
+export const shopRarities = {
+  common: { label: 'Commun', icon: 'spark' },
+  rare: { label: 'Rare', icon: 'award' },
+  epic: { label: 'Épique', icon: 'planet' },
+  legendary: { label: 'Légendaire', icon: 'crown' },
+  mythic: { label: 'Mythique', icon: 'star' },
+}
+
 export const shopCollections = [
   { name: 'Atelier cosy', description: 'Des tons pêche pour tes sessions au calme.', palette: 'peach', items: [
-    ['avatar', 'cat', 'Chat de bureau', '🐈', 15, 0],
-    ['title', 'tea-break', 'Pause thé', '♨', 20, 0],
-    ['frame', 'porcelain', 'Porcelaine', '#e3a66c', 25, 0],
-    ['trail', 'petals', 'Pétales', '#ffb8bc', 30, 50],
-    ['banner', 'gingham', 'Nappe à carreaux', '#f4ab87', 40, 100],
-    ['theme', 'peach', 'Pêche givrée', null, 60, 100],
+    ['avatar', 'cat', 'Chat de bureau', '🐈', 150, 0, 'common'],
+    ['title', 'tea-break', 'Pause thé', '♨', 200, 0, 'common'],
+    ['frame', 'porcelain', 'Porcelaine', '#e3a66c', 300, 0, 'rare'],
+    ['trail', 'petals', 'Pétales', '#ffb8bc', 400, 50, 'rare'],
+    ['banner', 'gingham', 'Nappe à carreaux', '#f4ab87', 600, 100, 'rare'],
+    ['theme', 'peach', 'Pêche givrée', null, 1000, 100, 'epic'],
   ] },
   { name: 'Sous-bois', description: 'Mousse, fougères et une loutre en vadrouille.', palette: 'canopy', items: [
-    ['avatar', 'otter', 'Loutre curieuse', '🦦', 25, 0],
-    ['title', 'forest-scout', 'Pisteur du savoir', '❧', 30, 50],
-    ['frame', 'ivy', 'Lierre', '#69c58e', 35, 100],
-    ['trail', 'fireflies', 'Lucioles', '#edff91', 45, 150],
-    ['banner', 'ferns', 'Fougères', '#83d5a2', 50, 150],
-    ['theme', 'canopy', 'Canopée', null, 75, 225],
+    ['avatar', 'otter', 'Loutre curieuse', '🦦', 250, 0, 'common'],
+    ['title', 'forest-scout', 'Pisteur du savoir', '❧', 350, 50, 'rare'],
+    ['frame', 'ivy', 'Lierre', '#69c58e', 450, 100, 'rare'],
+    ['trail', 'fireflies', 'Lucioles', '#edff91', 700, 150, 'epic'],
+    ['banner', 'ferns', 'Fougères', '#83d5a2', 850, 150, 'epic'],
+    ['theme', 'canopy', 'Canopée', null, 1400, 225, 'epic'],
   ] },
   { name: 'Pixel club', description: 'L’esprit des salles d’arcade rétro.', palette: 'pixel-night', items: [
-    ['avatar', 'alien', 'Alien rétro', '👾', 35, 150],
-    ['title', 'combo-keeper', 'Machine à combos', '⚑', 45, 225],
-    ['frame', 'pixel-cut', 'Bits roses', '#fb80c5', 45, 300],
-    ['trail', 'bitstream', 'Flux de bits', '#77ffdf', 55, 400],
-    ['banner', 'scanlines', 'Écran cathodique', '#a996ff', 65, 500],
-    ['theme', 'pixel-night', 'Nuit pixel', null, 90, 650],
+    ['avatar', 'alien', 'Alien rétro', '👾', 600, 150, 'rare'],
+    ['title', 'combo-keeper', 'Machine à combos', '⚑', 800, 225, 'epic'],
+    ['frame', 'pixel-cut', 'Bits roses', '#fb80c5', 1000, 300, 'epic'],
+    ['trail', 'bitstream', 'Flux de bits', '#77ffdf', 1200, 400, 'epic'],
+    ['banner', 'scanlines', 'Écran cathodique', '#a996ff', 1600, 500, 'legendary'],
+    ['theme', 'pixel-night', 'Nuit pixel', null, 2000, 650, 'legendary'],
   ] },
   { name: 'Station astrale', description: 'Des équipements pour réviser en orbite.', palette: 'deep-space', items: [
-    ['avatar', 'astronaut', 'Astronaute lunaire', '🧑‍🚀', 55, 400],
-    ['title', 'moon-pilot', 'Pilote de comètes', '☾', 65, 500],
-    ['frame', 'orbit-ring', 'Anneaux de Saturne', '#fad789', 70, 650],
-    ['trail', 'comets', 'Queue de comète', '#a9dfff', 80, 800],
-    ['banner', 'constellations', 'Carte du ciel', '#8aaeff', 90, 1000],
-    ['theme', 'deep-space', 'Espace profond', null, 120, 1200],
+    ['avatar', 'astronaut', 'Astronaute lunaire', '🧑‍🚀', 1000, 400, 'epic'],
+    ['title', 'moon-pilot', 'Pilote de comètes', '☾', 1300, 500, 'epic'],
+    ['frame', 'orbit-ring', 'Anneaux de Saturne', '#fad789', 1600, 650, 'legendary'],
+    ['trail', 'comets', 'Queue de comète', '#a9dfff', 1900, 800, 'legendary'],
+    ['banner', 'constellations', 'Carte du ciel', '#8aaeff', 2200, 1000, 'legendary'],
+    ['theme', 'deep-space', 'Espace profond', null, 2800, 1200, 'legendary'],
+  ] },
+  { name: 'Reliques du Focus', description: 'Des pièces de prestige à viser sur plusieurs semaines.', palette: 'singularity', items: [
+    ['avatar', 'unicorn', 'Licorne astrale', '🦄', 3500, 1700, 'legendary'],
+    ['frame', 'astral-crown', 'Couronne astrale', '#ffd78c', 4200, 2350, 'legendary'],
+    ['title', 'beyond-rank-s', 'Au-delà du rang S', '✵', 5000, 2700, 'mythic'],
+    ['trail', 'quasar', 'Faille quantique', '#f3b4ff', 5500, 3100, 'mythic'],
+    ['banner', 'supernova', 'Supernova', '#ffc0e8', 6000, 3600, 'mythic'],
+    ['theme', 'singularity', 'Singularité', null, 7500, 4200, 'mythic'],
   ] },
 ].map(collection => ({
   ...collection,
-  items: collection.items.map(([type, id, label, visual, price, xp]) => ({ type, id, label, visual, price, xp })),
+  items: collection.items.map(([type, id, label, visual, price, xp, rarity]) => ({ type, id, label, visual, price, xp, rarity })),
 }))
 
 export const shopItems = shopCollections.flatMap(collection => collection.items)

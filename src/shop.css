@@ -59,7 +59,23 @@
 .loot-bonus > div { flex: 1 1 180px; }
 .loot-bonus h2 { font-size: 17px; }
 
-.shop-filters { margin-bottom: 13px; }
+.shop-filter-toolbar { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
+.shop-rarity-filter { width: min(100%, 195px); }
+.shop-rarity-filter > span { font-size: 11px; }
+.shop-rarity-filter select { min-height: 36px; font-size: 12px; }
+.shop-rarity-guide { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; margin-top: 14px; }
+.shop-rarity-guide > div { display: grid; justify-items: start; gap: 2px; padding: 11px; border: 1px solid color-mix(in srgb, var(--rarity-color) 40%, var(--line)); border-radius: 11px; background: var(--surface); color: var(--rarity-color); }
+.shop-rarity-guide strong { font-size: 13px; }
+.shop-rarity-guide small { color: var(--muted); font-size: 10px; }
+[data-rarity='common'] { --rarity-color: var(--muted); }
+[data-rarity='rare'] { --rarity-color: var(--sky); }
+[data-rarity='epic'] { --rarity-color: var(--purple); }
+[data-rarity='legendary'] { --rarity-color: var(--amber); }
+[data-rarity='mythic'] { --rarity-color: var(--rose); }
+.shop-rarity-label { display: inline-flex; align-items: center; align-self: start; gap: 4px; width: fit-content; margin-bottom: 3px; color: var(--rarity-color); font-size: 10px; font-weight: 850; letter-spacing: .04em; }
+.cosmetic-copy small[data-rarity] { color: var(--rarity-color); }
+.shop-empty { display: grid; justify-items: start; gap: 10px; }
+.shop-empty p { color: var(--muted); font-size: 13px; }
 .shop-filters .btn { min-height: 36px; padding-inline: 11px; font-size: 12px; }
 .shop-collection + .shop-collection { margin-top: 23px; }
 .shop-collection-heading { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
@@ -69,12 +85,15 @@
 [data-collection='canopy'] { --loot-color: #82c69d; }
 [data-collection='pixel-night'] { --loot-color: #e698e2; }
 [data-collection='deep-space'] { --loot-color: #91bfff; }
+[data-collection='singularity'] { --loot-color: #f3b4ff; }
 .shop-collection-mark {
   display: grid; flex: none; place-items: center; width: 39px; height: 39px; border: 1px solid var(--line);
   border-radius: 10px; color: var(--text); background: color-mix(in srgb, var(--loot-color) 30%, var(--surface));
 }
 .shop-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .shop-card { display: grid; grid-template-rows: auto 1fr; min-width: 0; overflow: hidden; }
+.shop-card[data-rarity] { border-top: 3px solid var(--rarity-color); }
+.shop-card:is([data-rarity='legendary'], [data-rarity='mythic']) .shop-card-art { --loot-color: var(--rarity-color); }
 .shop-card-art {
   position: relative; display: grid; place-items: center; height: 112px; border-bottom: 1px solid var(--line);
   background: radial-gradient(ellipse at 50% 64%, color-mix(in srgb, var(--loot-color) 34%, var(--surface)), transparent 72%),
@@ -88,11 +107,10 @@
   position: absolute; top: 6px; left: 6px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 20px;
   background: var(--base); color: var(--muted); font-size: 10px; font-weight: 750;
 }
-.shop-card-content { display: grid; grid-template-rows: auto 1fr auto auto; gap: 3px; padding: 10px; }
+.shop-card-content { display: flex; flex-direction: column; gap: 3px; padding: 10px; }
 .shop-card-collection { color: var(--quiet); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .075em; }
 .shop-collection .shop-card-collection { display: none; }
-.shop-collection .shop-card-content { grid-template-rows: 1fr auto auto; }
-.shop-card h3 { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.shop-card h3 { flex: 1; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
 .shop-card p { color: var(--muted); font-size: 11px; }
 .shop-card-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
 .shop-card-actions .btn { min-height: 36px; padding-inline: 8px; font-size: 11px; }
@@ -103,18 +121,23 @@
 .profile-frame[data-frame='orbit-ring'], .cosmetic-art[data-design='orbit-ring'] { border-style: double; border-width: 4px; }
 .profile-frame[data-frame='porcelain'], .cosmetic-art[data-design='porcelain'] { border-style: dotted; }
 .profile-frame[data-frame='ivy'], .cosmetic-art[data-design='ivy'] { border-radius: 50% 31% 50% 31%; }
+.profile-frame[data-frame='astral-crown'], .cosmetic-art[data-design='astral-crown'] { border: 4px double var(--frame-color, var(--reward-color)); box-shadow: 0 0 13px color-mix(in srgb, var(--frame-color, var(--reward-color)) 55%, transparent); }
 [data-design='gingham'] { --loot-pattern: repeating-linear-gradient(0deg, transparent 0 9px, #f4ab8755 10px 18px), repeating-linear-gradient(90deg, transparent 0 9px, #f4ab8755 10px 18px); }
 [data-design='ferns'] { --loot-pattern: repeating-linear-gradient(36deg, transparent 0 9px, #83d5a266 10px 12px, transparent 13px 20px); }
 [data-design='scanlines'] { --loot-pattern: repeating-linear-gradient(0deg, transparent 0 3px, #a996ff80 4px 5px); }
 [data-design='constellations'] { --loot-pattern: radial-gradient(circle, #8aaeffc0 0 1px, transparent 2px) 0 0 / 18px 23px, radial-gradient(circle, #8aaeff96 0 1px, transparent 2px) 9px 5px / 32px 33px; }
-.profile-banner:is([data-design='gingham'], [data-design='ferns'], [data-design='scanlines'], [data-design='constellations'])::before { background: var(--loot-pattern); }
-.cosmetic-art:is([data-design='gingham'], [data-design='ferns'], [data-design='scanlines'], [data-design='constellations']) { background: var(--loot-pattern), var(--surface); }
+[data-design='supernova'] { --loot-pattern: radial-gradient(ellipse at 78% 43%, #fff6cf 0 2%, #ffc0e8c9 3% 7%, #a875ff70 12%, transparent 35%), repeating-conic-gradient(from 15deg at 78% 43%, transparent 0 20deg, #ffc0e83b 22deg 24deg, transparent 26deg 40deg); }
+.profile-banner:is([data-design='gingham'], [data-design='ferns'], [data-design='scanlines'], [data-design='constellations'], [data-design='supernova'])::before { background: var(--loot-pattern); }
+.cosmetic-art:is([data-design='gingham'], [data-design='ferns'], [data-design='scanlines'], [data-design='constellations'], [data-design='supernova']) { background: var(--loot-pattern), var(--surface); }
 .flight-trail:is([data-trail='petals'], [data-trail='bitstream'], [data-trail='comets']) i { border-radius: 0; }
 .flight-trail[data-trail='petals'] i { rotate: 38deg; border-radius: 62% 28% 62% 28%; }
 .flight-trail[data-trail='fireflies'] i { box-shadow: 0 0 7px 1px currentColor; }
 .flight-trail[data-trail='comets'] i { width: 11px; height: 2px; background: linear-gradient(90deg, transparent, currentColor); }
+.flight-trail[data-trail='quasar'] i { width: 9px; height: 9px; border-radius: 0; rotate: 45deg; box-shadow: 0 0 8px 2px currentColor; }
 
 @media (max-width: 660px) {
+  .shop-rarity-guide { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .shop-rarity-guide > div { padding: 8px; }
   .loot-hero { grid-template-columns: minmax(0, 1fr); gap: 11px; }
   .loot-hero .page-heading { margin-bottom: 12px; }
   .loot-wallet { width: fit-content; min-width: 0; padding: 6px 13px 6px 6px; }

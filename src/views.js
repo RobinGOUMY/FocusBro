@@ -4,7 +4,7 @@ import { focusActivities, focusActivity } from './focus-activities.js'
 import { courseExerciseSkills, mathSkills, problemFor, skillById, skillForCard } from './math-practice.js'
 import { arcadeModes } from './arcade.js'
 import { dailyMissions } from './missions.js'
-import { cosmeticCategories, cosmetics, cosmeticTypes, equippedCosmetic, levels, ownsCosmetic, passCosmetics } from './pass.js'
+import { cosmeticCategories, cosmetics, cosmeticTypes, equippedCosmetic, levels, ownsCosmetic, passCosmetics, shopRarities } from './pass.js'
 import { availableCustomCards, dailyGoal, dayKey, isCourseWorked, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
 
 const glyphs = {
@@ -55,6 +55,7 @@ const glyphs = {
   gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12m0-12H8.5A2.5 2.5 0 1 1 11 5.5L12 8Zm0 0h3.5A2.5 2.5 0 1 0 13 5.5L12 8Z"/>',
   shop: '<path d="M4 9h16l1 12H3L4 9Zm4 1V6a4 4 0 0 1 8 0v4"/>',
   coin: '<circle cx="12" cy="12" r="9"/><path d="m12 7 3 5-3 5-3-5 3-5Z"/>',
+  star: '<path d="m12 2 3 6.5 7 1-5 5 1.2 7-6.2-3.3-6.2 3.3 1.2-7-5-5 7-1L12 2Z"/>',
   slice: '<path d="M3 21 17 7l4-4-2 7-5 5-4 1-2 2M4 8l4 4m2-9 2 4M3 15h3"/>',
   snake: '<path d="M21 6h-8a3 3 0 0 0 0 6h3a3 3 0 0 1 0 6H3m15-12v.01"/>',
   rail: '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M9 17l-3 4m9-4 3 4m-9-7h.01m6 0h.01"/>',
@@ -571,7 +572,8 @@ function rewardChoice(item, state, xp) {
   const locked = !ownsCosmetic(state, item, xp)
   const active = state.profile[item.type] === item.id
   const status = locked ? `Niv. ${item.level}` : active ? 'Équipé' : 'Équiper'
-  const content = `${cosmeticArt(item)}<span class="cosmetic-copy"><small>${cosmeticTypes[item.type]}</small><strong>${item.label}</strong><span>${status}</span></span>${icon(locked ? 'lock' : active ? 'check' : 'plus', 15)}`
+  const rarity = shopRarities[item.rarity]
+  const content = `${cosmeticArt(item)}<span class="cosmetic-copy"><small ${rarity ? `data-rarity="${item.rarity}"` : ''}>${cosmeticTypes[item.type]}${rarity ? ` · ${rarity.label}` : ''}</small><strong>${item.label}</strong><span>${status}</span></span>${icon(locked ? 'lock' : active ? 'check' : 'plus', 15)}`
   return button(content, 'reward', 'cosmetic-choice', `data-type="${item.type}" data-value="${item.id}" aria-pressed="${active}" ${locked ? 'disabled' : ''}`)
 }
 

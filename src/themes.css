@@ -100,3 +100,7 @@
 :is([data-theme='deep-space'], [data-palette='deep-space']) {
   --base: #0b1425; --sidebar: #101d33; --surface: #142746; --raised: #1d3455; --accent: #a2e0ff;
 }
+:is([data-theme='singularity'], [data-palette='singularity']) {
+  --base: #0d0b1b; --sidebar: #18102b; --surface: #211638; --raised: #302148; --accent: #f2c5ff;
+  --hero-bg: #e8b9f5; --sky: #bdc9ff; --mint: #9aebdb; --amber: #ffda96;
+}
