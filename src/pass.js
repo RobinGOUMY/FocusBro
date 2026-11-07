@@ -1,3 +1,5 @@
+import { earnedXp, studyDayKeys } from './progression.js'
+
 export const cosmeticTypes = {
   theme: 'Thème', avatar: 'Avatar', frame: 'Cadre', banner: 'Bannière', trail: 'Traînée', title: 'Titre',
 }
@@ -33,9 +35,36 @@ const milestones = [
   [4200, 'Légende', [['avatar', 'crown', 'Couronne', '👑'], ['title', 'legend', 'Légende du QG', '★'], ['theme', 'royal', 'Or royal']]],
 ]
 
-export const levels = milestones.map(([xp, title, items], index) => ({
-  xp, title, number: index + 1,
-  rewards: items.map(([type, id, label, visual]) => ({ type, id, label, visual, xp, level: index + 1 })),
+const annualThresholds = [
+  [0, 0], [50, 1], [150, 3], [350, 6], [650, 10],
+  [1000, 15], [1500, 22], [2200, 30], [3000, 40], [4000, 50],
+  [5200, 60], [6600, 70], [8200, 80], [10000, 90], [12000, 100],
+  [14400, 110], [16800, 120], [19200, 128], [21600, 136], [24000, 144],
+]
+const supplyTokens = [25, 40, 50, 60, 75, 90, 100, 110, 125, 140, 160, 180, 200, 220, 240, 260, 280, 300, 350]
+const supplyTitles = ['Premier élan', 'Bon départ', 'Prise de rythme', 'En confiance', 'La cadence', 'Esprit curieux',
+  'Point d’étape', 'Cap maintenu', 'En mouvement', 'Nouvel horizon', 'Au long cours', 'Les bonnes habitudes',
+  'Regard neuf', 'Un cap de plus', 'La persévérance', 'Vers les sommets', 'La constance', 'Dernière ligne droite', 'Bientôt légendaire']
+const stages = milestones.flatMap(([legacyXp, title, items], index) => {
+  const [xp, days] = annualThresholds[index]
+  const stage = { id: `cosmetics-${index}`, xp, days, title, items, legacyXp, tokens: 0 }
+  const next = annualThresholds[index + 1]
+  return next ? [stage, {
+    id: `supply-${index}`, xp: Math.round((xp + next[0]) / 2), days: Math.ceil((days + next[1]) / 2),
+    title: supplyTitles[index], tokens: supplyTokens[index], items: [],
+  }] : [stage]
+})
+stages.push({ id: 'year-mastery', xp: 26000, days: 160, title: 'Maîtrise annuelle', tokens: 0, items: [
+  ['avatar', 'tiger', 'Tigre du savoir', '🐅'], ['frame', 'laurel', 'Lauriers', '#ffe6a4'],
+  ['banner', 'observatory', 'Observatoire', '#a7dfff'], ['trail', 'solar-wind', 'Vent solaire', '#ffdf96'],
+  ['title', 'year-architect', 'Architecte du savoir', '✹'], ['theme', 'zenith', 'Zénith'],
+] })
+
+export const levels = stages.map(({ items, ...stage }, index) => ({
+  ...stage, number: index + 1,
+  rewards: items.map(([type, id, label, visual]) => ({
+    type, id, label, visual, xp: stage.xp, days: stage.days, legacyXp: stage.legacyXp, level: index + 1,
+  })),
 }))
 
 export const passCosmetics = levels.flatMap(level => level.rewards)
@@ -95,7 +124,27 @@ export const shopCollections = [
 }))
 
 export const shopItems = shopCollections.flatMap(collection => collection.items)
+const rarityAccess = {
+  common: [0, 0], rare: [350, 5], epic: [2200, 25], legendary: [8200, 70], mythic: [16800, 120],
+}
+shopItems.forEach(item => {
+  const [xp, days] = rarityAccess[item.rarity]
+  item.xp = Math.max(item.xp, xp)
+  item.days = days
+})
+shopItems.find(item => item.id === 'singularity').xp = 24000
+shopItems.find(item => item.id === 'singularity').days = 144
 export const cosmetics = [...passCosmetics, ...shopItems]
+
+export const cosmeticKey = item => `${item.type}:${item.id}`
+
+export function reachedTier(level, xp, days) {
+  return xp >= level.xp && days >= level.days
+}
+
+export function legacyRewards(xp) {
+  return passCosmetics.filter(item => item.legacyXp !== undefined && item.legacyXp <= xp).map(cosmeticKey)
+}
 
 export function findCosmetic(type, id) {
   return cosmetics.find(item => item.type === type && item.id === id)
@@ -109,8 +158,9 @@ export function equippedCosmetic(profile, type) {
   return findCosmetic(type, profile[type]) ?? levels[0].rewards.find(item => item.type === type)
 }
 
-export function ownsCosmetic(state, item, xp) {
-  return item.price ? state.shop.owned.includes(item.id) : xp >= item.xp
+export function ownsCosmetic(state, item, xp, days) {
+  if (item.price) return state.shop.owned.includes(item.id)
+  return state.journey.legacyOwned.includes(cosmeticKey(item)) || reachedTier(item, xp, days ?? studyDayKeys(state).length)
 }
 
 export function equipCosmetic(state, type, id, xp) {
@@ -122,8 +172,22 @@ export function equipCosmetic(state, type, id, xp) {
 
 export function buyCosmetic(state, type, id, xp) {
   const item = findCosmetic(type, id)
-  if (!item?.price || xp < item.xp || state.shop.tokens < item.price || ownsCosmetic(state, item, xp)) return false
+  if (!item?.price || !reachedTier(item, xp, studyDayKeys(state).length) || state.shop.tokens < item.price || ownsCosmetic(state, item, xp)) return false
   state.shop.tokens -= item.price
   state.shop.owned.push(id)
   return item
+}
+
+
+export function pendingPassRewards(state, xp, days) {
+  return levels.filter(level => level.tokens && reachedTier(level, xp, days) && !state.journey.claimedTiers.includes(level.id))
+}
+
+export function claimPassRewards(state, id) {
+  const rewards = pendingPassRewards(state, earnedXp(state), studyDayKeys(state).length).filter(level => !id || level.id === id)
+  const tokens = rewards.reduce((total, level) => total + level.tokens, 0)
+  if (!tokens) return false
+  state.journey.claimedTiers.push(...rewards.map(level => level.id))
+  state.shop.tokens += tokens
+  return tokens
 }

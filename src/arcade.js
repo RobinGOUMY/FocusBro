@@ -13,9 +13,10 @@ export const arcadeModes = {
   runner: { name: 'Rail Express', icon: 'rail', color: 'sky', min: 1, max: 6 },
   sling: { name: 'Siège du savoir', icon: 'sling', color: 'purple', min: 1, max: 5 },
 }
-export const dailyArcadeXp = 60
-export const xpPerAnswer = 3
+export const dailyArcadeXp = 30
+export const xpPerAnswer = 2
 export const sprintDuration = 45_000
+export const arcadeCorrectCount = entry => entry?.correct ?? Math.floor((entry?.xp ?? 0) / 3)
 
 const memoryBank = [...arcadeQuestions, ...courseCards.map(card => ({
   ...card, prompt: card.question, explanation: card.answer,
@@ -120,9 +121,9 @@ export function saveArcadeResult(state, run, now = Date.now()) {
   if (existing) return existing
   const day = dayKey(now)
   const entry = days[day] ?? { xp: 0, subjects: {} }
-  const xp = Math.min(run.correct * xpPerAnswer, dailyArcadeXp - entry.xp)
+  const xp = Math.max(0, Math.min(run.correct * xpPerAnswer, dailyArcadeXp - entry.xp))
   if (run.correct) {
-    entry.correct = (entry.correct ?? entry.xp / xpPerAnswer) + run.correct
+    entry.correct = arcadeCorrectCount(entry) + run.correct
     entry.xp += xp
     if (run.subject) {
       const subject = entry.subjects[run.subject] ??= { xp: 0, rounds: 0 }

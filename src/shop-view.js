@@ -1,6 +1,7 @@
 import { dailyBonus, dailyMissions } from './missions.js'
 import { cosmeticCategories, cosmeticTypes, ownsCosmetic, shopCollections, shopItems, shopRarities } from './pass.js'
 import { studyStats } from './study.js'
+import { weeklyOverview } from './weekly-missions.js'
 import { button, cosmeticArt, heading, icon, link, tile } from './views.js'
 
 const number = new Intl.NumberFormat('fr-FR')
@@ -14,9 +15,9 @@ function tab(route, label, active, symbol = '') {
 function lootHeader(state, missions) {
   return `<section class="panel loot-hero">
     <div>
-      ${heading('LE BUTIN FOCUS', missions ? 'Missions du jour' : 'Boutique Focus', missions
-        ? 'Trois défis chaque jour. Révise à ton rythme et récupère tes jetons avant minuit.'
-        : 'Achète tes cosmétiques avec les jetons des missions. Ton XP ouvre l’accès à de nouveaux objets.')}
+      ${heading('LE BUTIN FOCUS', missions ? 'Missions et objectifs' : 'Boutique Focus', missions
+        ? 'De petites avancées chaque jour et des objectifs pour construire ton rythme au fil des semaines.'
+        : 'Choisis tes cosmétiques avec les jetons des missions. Ton expérience et tes jours de révision ouvrent les collections de prestige.')}
       <nav class="loot-nav" aria-label="Missions et boutique">
         ${tab('boutique/missions', 'Missions', missions, 'target')}
         ${tab('boutique', 'Boutique', !missions, 'shop')}
@@ -40,6 +41,7 @@ export function missionsView(state) {
         <div><p class="section-kicker">${dateLabel.format(new Date(`${day}T12:00:00`))}</p><h2 id="daily-missions-title">Tes trois défis</h2></div>
         <span class="loot-chip">${collected} / ${missions.length} récompenses récupérées</span>
       </div>
+      <p class="weekly-intro">Les trois récompenses du jour se récupèrent avant minuit.</p>
       <div class="daily-mission-grid">${missions.map(mission => `
         <article class="panel daily-mission" data-mission="${mission.id}" data-ready="${mission.completed && !mission.collected}">
           <div class="daily-mission-top">${tile(mission.icon, mission.color)}<span class="loot-chip">${icon('coin', 15)} +${mission.tokens} jetons</span></div>
@@ -54,20 +56,38 @@ export function missionsView(state) {
       ${tile(bonusEarned ? 'check' : 'gift', 'amber')}
       <div><h2>Bonus trio</h2><p>${bonusEarned ? 'Bonus ajouté à ton solde. Reviens demain pour de nouveaux défis.' : 'Récupère les trois récompenses du jour pour toucher le bonus.'}</p></div>
       <span class="loot-chip">${icon('coin', 16)} +${dailyBonus} jetons</span>
-    </section>`
+    </section>
+    ${weeklyView(state)}`
 }
 
-function shopCard(item, collection, state, xp) {
+function weeklyView(state) {
+  const { week, missions, backlog } = weeklyOverview(state)
+  return `<section class="weekly-missions" aria-labelledby="weekly-title">
+    <div class="loot-section-heading"><div><p class="section-kicker">SEMAINE DU ${dateLabel.format(new Date(`${week}T12:00:00`))}</p><h2 id="weekly-title" tabindex="-1">Ton rythme de la semaine</h2></div><span class="loot-chip">Jusqu’à 220 XP et 300 jetons</span></div>
+    <p class="weekly-intro">Les objectifs suivent tes révisions du lundi au dimanche. Les bonus des semaines terminées restent disponibles.</p>
+    <div class="daily-mission-grid">${missions.map(mission => `<article class="panel daily-mission" data-weekly="${mission.id}" data-ready="${mission.completed && !mission.collected}">
+      <div class="daily-mission-top">${tile(mission.icon, 'purple')}<span class="loot-chip">+${mission.xp} XP · ${mission.tokens} jetons</span></div>
+      <div class="daily-mission-copy"><h3 tabindex="-1">${mission.title}</h3><p>${mission.description}</p></div>
+      <div class="daily-mission-progress"><progress aria-label="${mission.title}" max="${mission.target}" value="${mission.progress}"></progress><span>${mission.progress} / ${mission.target}</span></div>
+      ${mission.collected ? `<p class="daily-mission-collected">${icon('check', 17)} Récompense récupérée</p>`
+        : mission.completed ? button('Récupérer', 'claim-weekly', 'primary', `data-value="${mission.id}" data-week="${week}"`)
+          : link('Continuer à réviser', mission.route, 'secondary')}
+    </article>`).join('')}</div>
+    ${backlog.length ? `<div class="panel loot-bonus"><div><h3>${backlog.length} bonus de semaines passées</h3><p>Ton travail t’attend dans les récompenses disponibles.</p></div>${button('Tout récupérer', 'claim-weekly-backlog', 'secondary')}</div>` : ''}
+  </section>`
+}
+
+function shopCard(item, collection, state, xp, studyDays) {
   const rarity = shopRarities[item.rarity]
-  const owned = ownsCosmetic(state, item, xp)
+  const owned = ownsCosmetic(state, item, xp, studyDays)
   const active = state.profile[item.type] === item.id
-  const xpLocked = xp < item.xp
+  const accessLocked = xp < item.xp || studyDays < item.days
   const missing = Math.max(0, item.price - state.shop.tokens)
-  const unavailable = xpLocked || missing > 0
+  const unavailable = accessLocked || missing > 0
   const status = owned ? (active ? 'Porté en ce moment' : 'Dans ton vestiaire')
-    : xpLocked ? `Dès ${number.format(item.xp)} XP`
+    : accessLocked ? `Accès à ${number.format(item.xp)} XP et ${item.days} jours de révision`
       : missing ? `Il te manque ${tokensLabel(missing)}` : 'Disponible'
-  const action = owned ? (active ? 'Équipé' : 'Équiper') : xpLocked ? 'Verrouillé' : 'Acheter'
+  const action = owned ? (active ? 'Équipé' : 'Équiper') : accessLocked ? 'Verrouillé' : 'Acheter'
   const attributes = `data-type="${item.type}" data-value="${item.id}" aria-label="${action} · ${item.label}" aria-describedby="shop-status-${item.id}"`
   return `<article class="panel shop-card" data-collection="${collection.palette}" data-rarity="${item.rarity}">
     <div class="shop-card-art">
@@ -90,14 +110,14 @@ function shopCard(item, collection, state, xp) {
 }
 
 export function shopView(state, detail, rarityDetail = '') {
-  const { xp } = studyStats(state)
+  const { xp, studyDays } = studyStats(state)
   const filter = Object.hasOwn(cosmeticCategories, detail) ? detail : ''
   const rarity = Object.hasOwn(shopRarities, rarityDetail) ? rarityDetail : ''
   const matches = item => (!filter || filter === item.type) && (!rarity || rarity === item.rarity)
   const count = shopItems.filter(matches).length
   const categoryRoute = category => `boutique${category || rarity ? `/${category || 'tout'}` : ''}${rarity ? `/${rarity}` : ''}`
   const cards = collection => collection.items.filter(matches)
-    .map(item => shopCard(item, collection, state, xp)).join('')
+    .map(item => shopCard(item, collection, state, xp, studyDays)).join('')
   return `${lootHeader(state, false)}
     <section class="shop-rarity-guide" aria-label="Les cinq raretés">
       ${Object.entries(shopRarities).map(([id, entry]) => {
@@ -107,7 +127,7 @@ export function shopView(state, detail, rarityDetail = '') {
     </section>
     <div class="loot-section-heading shop-heading">
       <div><p class="section-kicker">${count} OBJETS À COLLECTIONNER</p><h2>${filter ? cosmeticCategories[filter] : rarity ? `Objets ${shopRarities[rarity].label.toLocaleLowerCase('fr')}s` : 'Les collections'}</h2></div>
-      <span class="loot-chip">${icon('bolt', 16)} ${number.format(xp)} XP au total</span>
+      <span class="loot-chip">${icon('bolt', 16)} ${number.format(xp)} XP · ${studyDays} jours de révision</span>
     </div>
     <div class="shop-filter-toolbar">
       <nav class="shop-filters" aria-label="Filtrer les objets">

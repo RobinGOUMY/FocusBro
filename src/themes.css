@@ -104,3 +104,7 @@
   --base: #0d0b1b; --sidebar: #18102b; --surface: #211638; --raised: #302148; --accent: #f2c5ff;
   --hero-bg: #e8b9f5; --sky: #bdc9ff; --mint: #9aebdb; --amber: #ffda96;
 }
+:is([data-theme='zenith'], [data-palette='zenith']) {
+  --base: #101b27; --sidebar: #182737; --surface: #203448; --raised: #2b4359; --accent: #ffe5ab;
+  --hero-bg: #f2dcab; --sky: #b7dcff; --mint: #b0ecd9;
+}

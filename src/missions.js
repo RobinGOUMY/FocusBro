@@ -1,5 +1,5 @@
-import { xpPerAnswer } from './arcade.js'
-import { dayKey } from './study.js'
+import { arcadeCorrectCount } from './arcade.js'
+import { dayKey, reviewCards } from './study.js'
 
 const focusMission = {
   id: 'focus', icon: 'timer', color: 'purple', activity: 'Focus', route: 'focus',
@@ -20,8 +20,7 @@ const recallMissions = [
     title: 'Bon réflexe', description: 'Cumule 5 réussites dans des parties terminées. Les réponses, les paires et les actions correctes comptent.',
     target: 5, tokens: 20,
     count: (state, day) => {
-      const entry = state.arcade.days[day]
-      return entry?.correct ?? (entry?.xp ?? 0) / xpPerAnswer
+      return arcadeCorrectCount(state.arcade.days[day])
     },
   },
 ]
@@ -41,9 +40,9 @@ const studyMissions = [
   },
   {
     id: 'note', icon: 'pen', color: 'mint', activity: 'Feynman', route: 'feynman',
-    title: 'À ta façon', description: 'Enregistre une nouvelle explication dans le carnet.',
+    title: 'À ta façon', description: 'Enregistre une explication nouvelle ou retravaillée dans le carnet.',
     target: 1, tokens: 20,
-    count: (state, day) => state.notes.filter(note => dayKey(note.createdAt) === day).length,
+    count: (state, day) => state.journey.explanations[day] ? 1 : state.notes.filter(note => dayKey(note.createdAt) === day).length,
   },
 ]
 
@@ -57,6 +56,10 @@ export function dailyMissions(state, now = Date.now()) {
   return {
     day,
     missions: missions.map(({ count, ...mission }) => {
+      if (mission.id === 'cards') {
+        mission.target = Math.max(1, Math.min(mission.target, reviewCards(state, { scope: 'worked' }, 'practice').length))
+        mission.description = `Révise ${mission.target} flashcard${mission.target > 1 ? 's différentes' : ''}, dans le mode de ton choix.`
+      }
       const collected = claimed.includes(mission.id)
       const progress = collected ? mission.target : Math.min(mission.target, count(state, day))
       return { ...mission, progress, completed: progress === mission.target, collected }

@@ -58,6 +58,10 @@
 }
 .loot-bonus > div { flex: 1 1 180px; }
 .loot-bonus h2 { font-size: 17px; }
+.weekly-intro { margin: 0 0 12px; color: var(--text); font-size: 15px; line-height: 1.6; }
+.weekly-missions { margin-top: 28px; }
+.weekly-missions .daily-mission-top { flex-wrap: wrap; }
+.explanation-reward { color: var(--text); font-size: 15px; line-height: 1.65; }
 
 .shop-filter-toolbar { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
 .shop-rarity-filter { width: min(100%, 195px); }

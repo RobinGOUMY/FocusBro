@@ -4,7 +4,9 @@ import { focusActivities, focusActivity } from './focus-activities.js'
 import { courseExerciseSkills, mathSkills, problemFor, skillById, skillForCard } from './math-practice.js'
 import { arcadeModes } from './arcade.js'
 import { dailyMissions } from './missions.js'
-import { cosmeticCategories, cosmetics, cosmeticTypes, equippedCosmetic, levels, ownsCosmetic, passCosmetics, shopRarities } from './pass.js'
+import { cosmeticCategories, cosmetics, cosmeticTypes, equippedCosmetic, levels, ownsCosmetic, passCosmetics, pendingPassRewards, reachedTier, shopRarities } from './pass.js'
+import { dailyMathXp, dailyMemoryXp, explanationXp, studyDayTargets } from './progression.js'
+import { weeklyOverview } from './weekly-missions.js'
 import { availableCustomCards, dailyGoal, dayKey, isCourseWorked, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
 
 const glyphs = {
@@ -132,7 +134,7 @@ function navItem(page, active, mobile = false) {
 
 export function layout(state, page, content) {
   const stats = studyStats(state)
-  const level = levelInfo(stats.xp)
+  const level = levelInfo(stats.xp, stats.studyDays)
   const name = escapeHtml(state.profile.name || 'FocusBro')
   const avatar = equippedCosmetic(state.profile, 'avatar')
   const frame = equippedCosmetic(state.profile, 'frame')
@@ -145,7 +147,7 @@ export function layout(state, page, content) {
       <a class="sidebar-level" href="#pass">
         <div class="level-heading">${tile('award', 'purple')}<div><b>${level.current.title}</b><small>Niveau ${level.current.number}</small></div>${icon('chevron', 16)}</div>
         ${bar(level.progress, 'Progression du niveau')}
-        <div class="level-caption">${level.next ? `${number.format(stats.xp)} / ${level.next.xp} XP` : 'Niveau max'}<span>${Math.round(level.progress * 100)} %</span></div>
+        <div class="level-caption">${level.next ? `${number.format(Math.min(stats.xp, level.next.xp))} / ${level.next.xp} XP` : 'Parcours complété'}<span>${level.next ? `${Math.min(stats.studyDays, level.next.days)} / ${level.next.days} jours` : '100 %'}</span></div>
       </a>
       ${navItem(pages.at(-1), page)}
     </div>
@@ -191,14 +193,17 @@ function dailyPanel(state, todayMinutes) {
 function missionTeaser(state) {
   const { missions } = dailyMissions(state)
   const ready = missions.filter(mission => mission.completed && !mission.collected).length
+  const weekly = weeklyOverview(state)
+  const weeklyReady = weekly.missions.filter(mission => mission.completed && !mission.collected).length + weekly.backlog.length
+  const rewardsReady = ready + weeklyReady
   const done = missions.filter(mission => mission.completed).length
   const detail = ready ? countLabel(ready, 'récompense à récupérer', 'récompenses à récupérer')
     : done === missions.length ? 'Toutes les récompenses récupérées'
       : `${done} / ${missions.length} missions accomplies`
   return `<a class="panel mission-teaser" href="#boutique/missions">
-    ${tile(ready ? 'gift' : 'target', 'amber')}
-    <span><strong>Missions du jour</strong><small>${detail}</small></span>
-    <span class="mission-teaser-action">${ready ? 'Récupérer' : 'Voir les missions'}</span>${icon('arrow', 18)}
+    ${tile(rewardsReady ? 'gift' : 'target', 'amber')}
+    <span><strong>Missions et objectifs</strong><small>${weeklyReady ? `${weeklyReady} bonus hebdomadaire${weeklyReady > 1 ? 's' : ''} à récupérer · ` : ''}${detail}</small></span>
+    <span class="mission-teaser-action">${rewardsReady ? 'Récupérer' : 'Voir les missions'}</span>${icon('arrow', 18)}
   </a>`
 }
 
@@ -231,7 +236,7 @@ export function dashboard(state) {
     <section class="stats-grid" aria-label="Mes statistiques">
       ${statCard('fire', 'amber', 'Série en cours', countLabel(stats.streak, 'jour'), 'Jours de révision consécutifs')}
       ${statCard('clock', 'sky', 'Temps en focus', timeLabel(stats.minutes), 'Depuis tes débuts')}
-      ${statCard('bolt', 'purple', 'Expérience', `${number.format(stats.xp)} XP`, `Niveau ${levelInfo(stats.xp).current.title}`)}
+      ${statCard('bolt', 'purple', 'Expérience', `${number.format(stats.xp)} XP`, `${stats.studyDays} jours de révision · ${levelInfo(stats.xp, stats.studyDays).current.title}`)}
     </section>
     <div class="dashboard-bottom">
       <section aria-labelledby="modules-title">
@@ -242,7 +247,7 @@ export function dashboard(state) {
           ${moduleCard('exercices', 'math', 'amber', 'Exercices de maths', 'Entraîne-toi avec des variantes.', `${mathSkills.length} types d’exercices`)}
           ${moduleCard('feynman', 'pen', 'mint', 'Carnet Feynman', 'Explique avec tes propres mots.', noteCount ? countLabel(noteCount, 'note') : 'Défis guidés')}
           ${moduleCard('arcade', 'arcade', 'sky', 'Arcade', 'Joue avec les questions de tes chapitres travaillés.', `${Object.keys(arcadeModes).length} mini-jeux`)}
-          ${moduleCard('pass', 'gift', 'amber', 'Pass Focus', 'Débloque des récompenses en gagnant de l’XP.', `Niveau ${levelInfo(stats.xp).current.number} sur ${levels.length}`)}
+          ${moduleCard('pass', 'gift', 'amber', 'Pass Focus', 'Un parcours de récompenses pour toute l’année.', `Niveau ${levelInfo(stats.xp, stats.studyDays).current.number} sur ${levels.length}`)}
         </div>
       </section>
       <section class="dashboard-next" aria-labelledby="next-title">
@@ -349,6 +354,7 @@ function mathFeedback(problem, track, context, recovery, returnTo) {
     ${!correct && result.submitted.length ? `<p class="math-submitted">Ta réponse · ${escapeHtml(result.submitted.join(' · '))}</p>` : ''}
     ${result.feedback ? `<p class="math-diagnosis">${escapeHtml(result.feedback)}</p>` : ''}
     <p>${escapeHtml(problem.solution)}</p>
+    ${track.result.xp ? `<p class="math-earned">+${track.result.xp} XP pour cet exercice</p>` : ''}
     ${recovery ? `<p class="math-recovery-text">${recovery === 1 ? 'Encore une variante réussie de suite pour valider la reprise.' : 'On garde cette méthode avec d’autres valeurs. Réussis deux variantes de suite pour valider la reprise.'}</p>` : ''}
     <div class="toolbar-actions">${primaryExit ? link(`${returnTo ? 'Reprendre les flashcards' : 'Explorer les autres compétences'} ${icon('arrow', 17)}`, primaryExit) : ''}${button(`${nextText} ${icon('arrow', 17)}`, 'math-next', primaryExit ? 'secondary' : 'primary')}</div>
   </section>`
@@ -376,7 +382,7 @@ export function mathView(state, context, returnTo) {
       ${track.result ? mathFeedback(problem, track, context, recovery, returnTo) : `<details class="math-hint"><summary>Voir un indice</summary><p>${escapeHtml(problem.hint)}</p></details>${mathAnswerForm(problem, track.current)}`}
     </section>
     <aside class="focus-aside">
-      <section class="panel padded"><div class="panel-title">${tile('target', 'mint')}<div><h2>Ta session</h2><p>Les résultats de cet entraînement</p></div></div><div class="math-session"><span><strong>${track.correct}/${track.answered}</strong> bonnes réponses</span><span><strong>${track.chain}</strong> de suite</span></div></section>
+      <section class="panel padded"><div class="panel-title">${tile('target', 'mint')}<div><h2>Ta session</h2><p>Les résultats de cet entraînement</p></div></div><div class="math-session"><span><strong>${track.correct}/${track.answered}</strong> bonnes réponses</span><span><strong>${track.chain}</strong> de suite</span></div><p>+10 XP par exercice réussi, jusqu’à ${dailyMathXp} XP par jour. Aujourd’hui, ${state.mathPractice.days[dayKey()]?.xp ?? 0} / ${dailyMathXp} XP.</p></section>
       <section class="panel padded"><div class="panel-title">${tile('book', 'sky')}<div><h2>Le cours associé</h2><p>${courseById.get(skill.course).title}</p></div></div>${link(`Relire le cours ${icon('arrow', 16)}`, `cours/${skill.course}`, 'secondary')}</section>
       ${pending.length ? `<section class="panel padded"><div class="panel-title">${tile('rotate', 'mint')}<div><h2>Reprises à terminer</h2><p>${countLabel(pending.length, 'compétence')}</p></div></div><ul class="math-pending">${pending.map(item => `<li><a class="back-link" href="#exercices/${item.id}">${escapeHtml(item.name)} ${icon('chevron', 14)}</a></li>`).join('')}</ul></section>` : ''}
       <section class="panel padded"><div class="panel-title">${tile('rotate', 'purple')}<div><h2>Rejoue autant que tu veux</h2><p>${mathSkills.length} types d’exercices sur les chapitres de maths.</p></div></div><p>Une difficulté lance une reprise immédiate. Chaque nouvelle variante change les valeurs et la correction s’adapte à ta réponse.</p></section>
@@ -450,6 +456,7 @@ export function flashcardsView(state, study) {
     : deck.length ? 'Tes cartes sont disponibles en entraînement libre. En maths, tu peux aussi essayer de nouvelles variantes.' : 'Choisis une matière de la bibliothèque pour démarrer.'
   const reviewed = state.reviews.filter(item => dayKey(item.at) === dayKey()).length
   const mastered = state.reviews.filter(item => item.grade === 'easy' && !item.practice).length
+  const memoryToday = state.reviews.filter(item => dayKey(item.at) === dayKey()).reduce((total, item) => total + item.xp, 0)
   const title = !deck.length && worked ? 'Qu’as-tu déjà travaillé ?' : study.started ? 'Série terminée !' : practice ? 'Prêt à t’entraîner ?' : cards.length ? 'Prêt à tester ta mémoire ?' : 'Tu es à jour !'
   const courseRoute = course ? `cours/${course.id}` : study.subject && study.subject !== 'autre' ? `cours/${study.subject}` : 'cours'
   const emptyAction = !deck.length && worked
@@ -470,7 +477,7 @@ export function flashcardsView(state, study) {
         : `<div class="empty-state">${tile(study.started ? 'check' : 'cards', 'purple')}<h2>${title}</h2><p>${cards.length ? `${countLabel(cards.length, 'carte')} ${practice ? 'dans la collection' : 'à revoir'}. Lance une série de ${Math.min(10, cards.length)}.` : nextReview}</p>${cards.length ? button(`${icon('play', 17)} ${study.started ? 'Relancer une série' : 'Commencer la révision'}`, 'start-review') : deck.length && !practice ? button(`${icon('rotate', 17)} Continuer en entraînement libre`, 'review-mode', 'primary', 'data-value="practice"') : emptyAction}</div>`}
       </section>
       <div class="focus-aside">
-        <section class="panel padded"><div class="panel-title">${tile('bolt', 'purple')}<div><h2>Bonus mémoire</h2><p>+20 XP toutes les 10 cartes faciles.</p></div></div>${bar(mastered % 10 / 10, 'Bonus mémoire')}<div class="quest-caption"><span>${mastered % 10} / 10</span><span>${countLabel(reviewed, 'carte révisée', 'cartes révisées')} aujourd’hui</span></div></section>
+        <section class="panel padded"><div class="panel-title">${tile('bolt', 'purple')}<div><h2>Bonus mémoire</h2><p>+20 XP toutes les 10 cartes faciles, jusqu’à ${dailyMemoryXp} XP par jour.</p></div></div>${bar(mastered % 10 / 10, 'Bonus mémoire')}<div class="quest-caption"><span>${memoryToday} / ${dailyMemoryXp} XP aujourd’hui</span><span>${countLabel(reviewed, 'carte révisée', 'cartes révisées')}</span></div></section>
         <section class="panel padded"><div class="panel-title">${tile('cards', 'mint')}<div><h2>Ta collection</h2><p>${countLabel(deck.length, 'carte')} dans cette sélection</p></div></div><p>${practice ? 'Rejoue les cartes quand tu veux. Le bonus mémoire se gagne en révision espacée.' : 'Un rappel facile réussi augmente l’intervalle, jusqu’à 16 jours. En maths, une difficulté déclenche d’abord un exercice avec de nouvelles valeurs.'}</p></section>
         ${card?.course && !course ? `<section class="panel padded"><div class="panel-title">${tile('book', 'sky')}<div><h2>Le cours de cette carte</h2><p>${courseById.get(card.course).title}</p></div></div>${link(`Ouvrir le cours ${icon('arrow', 16)}`, `cours/${card.course}`, 'secondary')}</section>` : ''}
       </div>
@@ -497,6 +504,7 @@ export function feynmanView(state, courseId, selectedId) {
       ${course || note ? `<section class="panel padded"><div class="panel-title">${tile('pen', 'mint')}<div><h2>${escapeHtml(course?.title ?? note.title)}</h2><p>${subjectById(course?.subject ?? note.subject).name} · ${course ? 'Défi guidé' : 'Ancienne explication'}</p></div></div>
         ${course ? `<div class="guide-prompt"><strong>${escapeHtml(course.guide.prompt)}</strong><details><summary>Voir un indice</summary><p>${escapeHtml(course.guide.hint)}</p></details></div>` : ''}
         <form id="note-form" class="stack-form" data-id="${note?.id ?? ''}" data-course="${course?.id ?? ''}">
+          <p class="explanation-reward">Une explication nouvelle ou retravaillée de ${studyDayTargets.explanation} caractères et un exemple de ${studyDayTargets.example} caractères rapportent ${explanationXp} XP, une fois par jour.</p>
           <label class="field"><span id="note-body-label">${course ? '1. Ton explication' : 'Ton explication'}</span><textarea name="body" aria-labelledby="note-body-label" rows="5" maxlength="5000" placeholder="Explique l’idée en deux ou trois phrases avec tes mots…" required>${escapeHtml(note?.body)}</textarea></label>
           ${course ? `<label class="field"><span id="note-example-label">2. Ton exemple ou ta comparaison</span><textarea name="example" aria-labelledby="note-example-label" rows="2" maxlength="1000" placeholder="Imagine une situation ou un exemple qui rend l’idée concrète…" required>${escapeHtml(note?.example)}</textarea></label>` : ''}
           <label class="field"><span id="note-gap-label">${course ? '3. Le point à retravailler' : 'Un point à éclaircir'} <small>(facultatif)</small></span><textarea name="gap" aria-labelledby="note-gap-label" rows="2" maxlength="800" placeholder="Quelle partie reste difficile à expliquer ?">${escapeHtml(note?.gap)}</textarea></label>
@@ -518,7 +526,7 @@ export function feynmanView(state, courseId, selectedId) {
 
 export function progressView(state) {
   const stats = studyStats(state)
-  const level = levelInfo(stats.xp)
+  const level = levelInfo(stats.xp, stats.studyDays)
   const week = weekActivity(state)
   const ceiling = Math.max(25, ...week.map(day => day.minutes))
   const bySubject = subjects.map(subject => {
@@ -530,17 +538,21 @@ export function progressView(state) {
       games: games.reduce((sum, item) => sum + item.rounds, 0),
       xp: [...sessions, ...reviews, ...games].reduce((sum, item) => sum + item.xp, 0),
     }
-  }).filter(item => item.minutes || item.reviews || item.games).sort((first, second) => second.xp - first.xp)
+  }).map(item => ({
+    ...item,
+    xp: item.xp + (item.id === 'maths' ? Object.values(state.mathPractice.days).reduce((total, entry) => total + (entry?.xp ?? 0), 0) : 0)
+      + Object.values(state.journey.explanations).filter(entry => entry.subject === item.id).reduce((total, entry) => total + entry.xp, 0),
+  })).filter(item => item.minutes || item.reviews || item.games || item.xp).sort((first, second) => second.xp - first.xp)
   const activity = [
     ...state.sessions.map(item => ({ ...item, icon: 'timer', title: 'Session focus', detail: `${item.minutes} min` })),
     ...state.reviews.map(item => ({ ...item, icon: 'cards', title: 'Carte révisée', detail: { easy: 'Facile', medium: 'Moyen', hard: 'Difficile' }[item.grade] })),
-    ...state.notes.map(item => ({ ...item, icon: 'pen', title: 'Explication Feynman', detail: item.title, at: item.createdAt, xp: 0 })),
+    ...state.notes.map(item => ({ ...item, icon: 'pen', title: 'Explication Feynman', detail: item.title, at: item.createdAt, xp: Object.values(state.journey.explanations).find(entry => entry.note === item.id)?.xp ?? 0 })),
     ...state.arcade.recent.filter(item => item.correct).map(item => ({
       ...item, icon: 'arcade', title: arcadeModes[item.mode].name, detail: `${item.correct} / ${item.total} ${{ memory: 'paires', slice: 'cibles', snake: 'éléments dans l’ordre' }[item.mode] ?? 'bonnes réponses'}`,
     })),
   ].filter(item => !item.subject || hasSubject(item.subject)).sort((first, second) => second.at - first.at).slice(0, 8)
   return `${heading('STATISTIQUES', 'Ta progression', 'Retrouve le temps investi et les récompenses gagnées.')}
-    <section class="panel padded progress-level"><div class="panel-title">${tile('award', 'purple')}<div><h2>Niveau ${level.current.number} · ${level.current.title}</h2><p>${level.next ? `${level.next.xp - stats.xp} XP avant le niveau ${level.next.title}` : 'Tu as atteint le niveau Légende.'}</p></div></div>${bar(level.progress, 'Progression du niveau')}<div class="quest-caption"><span>${stats.xp} XP${level.next ? ` / ${level.next.xp} XP` : ''}</span><a href="#pass">Voir le Pass Focus ${icon('arrow', 15)}</a></div></section>
+    <section class="panel padded progress-level"><div class="panel-title">${tile('award', 'purple')}<div><h2>Niveau ${level.current.number} · ${level.current.title}</h2><p>${level.next ? `Encore ${Math.max(0, level.next.xp - stats.xp)} XP et ${Math.max(0, level.next.days - stats.studyDays)} jours de révision pour ${level.next.title}.` : 'Tu as atteint la Maîtrise annuelle.'}</p></div></div>${bar(level.progress, 'Progression du niveau')}<div class="quest-caption"><span>${stats.xp} XP · ${stats.studyDays} jours de révision</span><a href="#pass">Voir le Pass Focus ${icon('arrow', 15)}</a></div><p>Les bonus hebdomadaires s’ajoutent à ton XP totale.</p></section>
     <div class="progress-grid">
       <section class="panel padded"><div class="panel-title">${tile('chart', 'sky')}<div><h2>Les 7 derniers jours</h2><p>Minutes passées en focus</p></div></div>
         <ul class="week-chart">${week.map(day => `<li class="${dayKey(day.date) === dayKey() ? 'current' : ''}" aria-label="${weekday.format(day.date)}, ${day.minutes} minutes"><strong>${day.minutes}</strong><span class="chart-slot"><span style="height:${day.minutes / ceiling * 100}%"></span></span><small>${dayLabel.format(day.date)}</small></li>`).join('')}</ul>
@@ -575,8 +587,8 @@ function themePreview(item, variant = '') {
   </span>`
 }
 
-function rewardChoice(item, state, xp) {
-  const locked = !ownsCosmetic(state, item, xp)
+function rewardChoice(item, state, xp, days) {
+  const locked = !ownsCosmetic(state, item, xp, days)
   const active = state.profile[item.type] === item.id
   const status = locked ? `Niv. ${item.level}` : active ? 'Équipé' : 'Équiper'
   const rarity = shopRarities[item.rarity]
@@ -585,47 +597,70 @@ function rewardChoice(item, state, xp) {
 }
 
 export function passView(state) {
-  const { xp } = studyStats(state)
-  const { current, next, progress } = levelInfo(xp)
-  const owned = passCosmetics.filter(item => item.xp <= xp).length
+  const { xp, studyDays } = studyStats(state)
+  const { current, next, progress } = levelInfo(xp, studyDays)
+  const owned = passCosmetics.filter(item => ownsCosmetic(state, item, xp, studyDays)).length
+  const upcoming = next ?? current
+  const pendingTokens = pendingPassRewards(state, xp, studyDays).reduce((total, level) => total + level.tokens, 0)
   const acts = [
-    ['Décollage', 'sky'], ['Vitesse de croisière', 'mint'], ['En orbite', 'amber'], ['Au-delà des étoiles', 'purple'],
+    ['Prendre ses repères', 'sky'], ['Installer son rythme', 'mint'], ['Approfondir', 'amber'], ['Viser la maîtrise', 'purple'],
   ]
-  return `${heading('RÉCOMPENSES DE RÉVISION', 'Pass Focus', 'Gagne de l’XP en révisant, franchis les paliers et équipe tes récompenses.')}
+  return `${heading('UN PARCOURS POUR L’ANNÉE', 'Pass Focus', '40 paliers de cosmétiques et de jetons. Ton expérience et tes journées de révision font avancer le parcours.')}
     <section class="pass-hero panel">
       <div class="pass-hero-copy"><div class="pass-chip">${icon('award', 16)} NIVEAU ${current.number} / ${levels.length}</div>
-        <h2>${current.title}</h2><p>${next ? `Plus que ${number.format(next.xp - xp)} XP avant le palier ${next.number} · ${next.title}.` : 'Tu as débloqué toutes les récompenses du Pass Focus.'}</p>
+        <h2>${current.title}</h2><p>${next ? `Pour le palier ${next.number}, encore ${number.format(Math.max(0, next.xp - xp))} XP et ${Math.max(0, next.days - studyDays)} jour(s) de révision.` : 'Tu as atteint la Maîtrise annuelle.'}</p>
         ${bar(progress, 'Progression vers le prochain palier')}
-        <div class="pass-meter-caption"><span>${number.format(xp)} XP au total</span><span>${next ? `${number.format(next.xp)} XP pour le prochain palier` : 'Palier final atteint'}</span></div>
+        <div class="pass-meter-caption"><span>${number.format(xp)} XP au total</span><span>${studyDays} jours de révision</span></div>
+        <div class="journey-requirements">
+          <div><span>${icon('bolt', 15)} Expérience</span><strong>${number.format(xp)} / ${number.format(upcoming.xp)} XP</strong>${bar(upcoming.xp ? Math.min(1, xp / upcoming.xp) : 1, 'Expérience du prochain palier')}</div>
+          <div><span>${icon('calendar', 15)} Régularité</span><strong>${studyDays} / ${upcoming.days} jours</strong>${bar(upcoming.days ? Math.min(1, studyDays / upcoming.days) : 1, 'Jours de révision du prochain palier')}</div>
+        </div>
         <div class="toolbar-actions">${button(`Voir ${next ? 'le prochain palier' : 'le dernier palier'} ${icon('arrow', 17)}`, 'jump-to-tier', 'primary', `data-value="${(next ?? current).number}"`)}${link('Voir les thèmes', 'pass/themes', 'secondary')}${link('Ma collection', 'profil', 'secondary')}</div>
       </div>
-      <div class="pass-hero-loot"><span class="pass-loot-label">${next ? 'PROCHAIN DÉBLOCAGE' : 'DERNIER PALIER'}</span><div class="pass-loot-art">${(next ?? current).rewards.map(cosmeticArt).join('')}</div><strong>${(next ?? current).rewards.map(item => item.label).join(' + ')}</strong><small>${owned} / ${passCosmetics.length} cosmétiques débloqués</small></div>
+      <div class="pass-hero-loot"><span class="pass-loot-label">${next ? 'PROCHAIN DÉBLOCAGE' : 'DERNIER PALIER'}</span><div class="pass-loot-art">${upcoming.tokens ? tile('coin', 'amber') : upcoming.rewards.map(cosmeticArt).join('')}</div><strong>${upcoming.tokens ? `${upcoming.tokens} jetons` : upcoming.rewards.map(item => item.label).join(' + ')}</strong><small>${owned} / ${passCosmetics.length} cosmétiques débloqués</small></div>
+    </section>
+    <section class="panel padded journey-guide">
+      <div><h2>Chaque journée compte</h2><p>Une journée de révision correspond à 25 minutes de focus, 10 flashcards différentes, 3 exercices de maths réussis ou une explication Feynman détaillée. Les jours s’additionnent au fil de ton travail.</p></div>
+      <div class="journey-destination"><strong>Le cap annuel</strong><span>26 000 XP · 160 jours de révision</span></div>
+      <details><summary>Comprendre les gains d’XP</summary><ul>
+        <li>Focus · 50 XP par Pomodoro terminé.</li>
+        <li>Flashcards · 20 XP pour 10 rappels faciles en révision espacée, jusqu’à 60 XP par jour.</li>
+        <li>Maths · 10 XP par exercice réussi, jusqu’à 50 XP par jour.</li>
+        <li>Feynman · 30 XP pour une explication nouvelle ou retravaillée de 80 caractères avec un exemple de 20 caractères, une fois par jour.</li>
+        <li>Arcade · 2 XP par réussite, jusqu’à 30 XP par jour.</li>
+        <li>Objectifs hebdomadaires · jusqu’à 220 XP et 300 jetons par semaine.</li>
+      </ul></details>
+      ${pendingTokens ? button(`${icon('gift', 17)} Récupérer ${pendingTokens} jetons`, 'claim-pass', 'primary', 'id="pass-rewards"') : '<p id="pass-rewards" tabindex="-1">Les réserves de jetons se récupèrent aux paliers intermédiaires.</p>'}
     </section>
     ${acts.map(([name, color], index) => `<section class="pass-act" aria-labelledby="act-${index}">
       <div class="pass-act-heading">${tile('spark', color)}<div><span class="section-kicker">ACTE 0${index + 1}</span><h2 id="act-${index}">${name}</h2></div></div>
-      <ol class="pass-track" start="${index * 5 + 1}">${levels.slice(index * 5, index * 5 + 5).map(level => {
-        const reached = xp >= level.xp
-        const status = level === current ? 'Ton niveau' : reached ? 'Débloqué' : level === next ? 'Prochain palier' : 'Verrouillé'
-        const rewards = `<div class="tier-rewards">${level.rewards.map(item => rewardChoice(item, state, xp)).join('')}</div>`
-        return `<li class="pass-tier panel${level === current ? ' current' : ''}${level === next ? ' upcoming' : ''}" id="pass-tier-${level.number}" tabindex="-1">
-          <div class="tier-heading"><span class="tier-number">${String(level.number).padStart(2, '0')}</span><div><h3>${level.title}</h3><span>${number.format(level.xp)} XP · ${status}</span></div></div>
+      <ol class="pass-track" start="${index * 10 + 1}">${levels.slice(index * 10, index * 10 + 10).map(level => {
+        const reached = reachedTier(level, xp, studyDays)
+        const acquired = level.rewards.length && level.rewards.every(item => ownsCosmetic(state, item, xp, studyDays))
+        const status = level === current ? 'Ton niveau' : reached ? 'Débloqué' : acquired ? 'Cosmétiques acquis' : level === next ? 'Prochain palier' : 'Verrouillé'
+        const collected = state.journey.claimedTiers.includes(level.id)
+        const rewards = level.tokens
+          ? `<div class="pass-supply">${icon('coin', 25)}<strong>+${level.tokens} jetons</strong>${collected ? '<span>Récupérés</span>' : button('Récupérer', 'claim-pass', 'secondary', `data-value="${level.id}" ${reached ? '' : 'disabled'}`)}</div>`
+          : `<div class="tier-rewards">${level.rewards.map(item => rewardChoice(item, state, xp, studyDays)).join('')}</div>`
+        return `<li class="pass-tier panel${level === current ? ' current' : ''}${level === next ? ' upcoming' : ''}" id="pass-tier-${level.number}" data-tier-id="${level.id}" tabindex="-1">
+          <div class="tier-heading"><span class="tier-number">${String(level.number).padStart(2, '0')}</span><div><h3 tabindex="-1">${level.title}</h3><span>${number.format(level.xp)} XP · ${level.days} jours</span><span>${status}</span></div></div>
           ${level.number === 1 ? `<details class="tier-starter"><summary>${level.rewards.length} cosmétiques de départ</summary>${rewards}</details>` : rewards}</li>`
       }).join('')}</ol></section>`).join('')}
     <div class="toolbar-actions pass-footer">${link(`${icon('arcade', 17)} Jouer dans l’Arcade`, 'arcade', 'primary')}${link('Voir la boutique', 'boutique', 'secondary')}${link('Voir mes statistiques', 'progression', 'secondary')}</div>`
 }
 
 export function themeGalleryView(state) {
-  const { xp } = studyStats(state)
+  const { xp, studyDays } = studyStats(state)
   const themes = passCosmetics.filter(item => item.type === 'theme')
   return `<a class="back-link" href="#pass">${icon('back', 17)} Retour au Pass Focus</a>
     ${heading('PASS FOCUS', 'Les thèmes du site', 'Choisis une palette pour l’accueil, les cours, le vestiaire et l’Arcade.')}
     <div class="theme-gallery">${themes.map(item => {
-      const locked = xp < item.xp
+      const locked = !ownsCosmetic(state, item, xp, studyDays)
       const active = state.profile.theme === item.id
       const status = locked ? 'Verrouillé' : active ? 'Équipé' : 'Équiper'
       const mark = locked ? icon('lock', 16) : active ? icon('check', 16) : ''
       return `<article class="theme-card panel">
-      ${themePreview(item)}<div class="theme-card-content"><div><h2>${item.label}</h2><p>Palier ${item.level} · ${number.format(item.xp)} XP</p></div>
+      ${themePreview(item)}<div class="theme-card-content"><div><h2>${item.label}</h2><p>Palier ${item.level} · ${number.format(item.xp)} XP · ${item.days} jours de révision</p></div>
         ${button(`${mark} ${status}`, 'reward', 'secondary', `data-type="theme" data-value="${item.id}" aria-label="${status} · ${item.label}" aria-pressed="${active}" ${locked ? 'disabled' : ''}`)}
       </div></article>`
     }).join('')}</div>
@@ -665,14 +700,14 @@ export function accountForm(registration, account) {
 }
 
 export function profileView(state, account) {
-  const { xp } = studyStats(state)
+  const { xp, studyDays } = studyStats(state)
   const name = escapeHtml(state.profile.name || 'FocusBro')
   const avatar = equippedCosmetic(state.profile, 'avatar')
   const frame = equippedCosmetic(state.profile, 'frame')
   const banner = equippedCosmetic(state.profile, 'banner')
   const title = equippedCosmetic(state.profile, 'title')
   const trail = equippedCosmetic(state.profile, 'trail')
-  const unlocked = cosmetics.filter(item => ownsCosmetic(state, item, xp))
+  const unlocked = cosmetics.filter(item => ownsCosmetic(state, item, xp, studyDays))
   return `${heading('PERSONNALISATION', 'Ton vestiaire', 'Mélange tes cosmétiques du Pass Focus et de la boutique.')}
     ${accountPanel(account)}
     <div class="progress-grid profile-overview">
@@ -685,7 +720,7 @@ export function profileView(state, account) {
     <div class="collection-heading"><div><h2>Ma collection</h2><p>${unlocked.length} / ${cosmetics.length} cosmétiques débloqués</p></div><div class="toolbar-actions">${link(`${icon('gift', 17)} Voir le Pass Focus`, 'pass', 'secondary')}${link(`${icon('shop', 17)} Boutique`, 'boutique', 'secondary')}</div></div>
     <div class="collection-grid">${Object.entries(cosmeticCategories).map(([type, label]) => {
       const items = unlocked.filter(item => item.type === type)
-      return `<section class="panel padded"><h3>${label} <span>${items.length}</span></h3><div class="tier-rewards">${items.map(item => rewardChoice(item, state, xp)).join('')}</div></section>`
+      return `<section class="panel padded"><h3>${label} <span>${items.length}</span></h3><div class="tier-rewards">${items.map(item => rewardChoice(item, state, xp, studyDays)).join('')}</div></section>`
     }).join('')}</div>`
 }
 

@@ -7,7 +7,8 @@
     "dev": "node server.mjs",
     "start": "node server.mjs",
     "build": "node build.mjs",
-    "check": "node --check server.mjs && node --check build.mjs && node --check src/app.js && node --check src/arcade-controller.js && node --check src/audio.js && node --check db/migrate.mjs && node --input-type=module -e \"import './src/focus-activities.js'; import './src/arcade-view.js'; import './src/shop-view.js'; import './src/cloud-save.js'; import './api/account.js'\""
+    "test": "node --test tests/progression.test.js",
+    "check": "node --check server.mjs && node --check build.mjs && node --check src/app.js && node --check src/arcade-controller.js && node --check src/audio.js && node --check db/migrate.mjs && node --input-type=module -e \"import './src/focus-activities.js'; import './src/arcade-view.js'; import './src/shop-view.js'; import './src/cloud-save.js'; import './api/account.js'\" && npm test"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0"

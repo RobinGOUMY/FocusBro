@@ -1,6 +1,7 @@
 import numberSkills from './math-numbers.js'
 import topicSkills from './math-topics.js'
 import { checkProblem, randomTools } from './math-problem.js'
+import { dailyMathXp, mathAnswerXp } from './progression.js'
 
 export const mathSkills = Object.entries({ ...numberSkills, ...topicSkills }).flatMap(([course, skills]) =>
   skills.map(([id, name, generate]) => ({ id, name, course, generate })),
@@ -153,7 +154,10 @@ export function recordMathAttempt(model, context, current, values, day) {
   track.answered += 1
   track.result = { ...result, recovered: recovering && stats.recovery === 0 }
   const correct = model.days[day]?.correct ?? 0
-  model.days[day] = { correct: correct + Number(result.kind === 'correct') }
+  const previousXp = model.days[day]?.xp ?? 0
+  const gained = result.kind === 'correct' ? Math.max(0, Math.min(mathAnswerXp, dailyMathXp - previousXp)) : 0
+  model.days[day] = { correct: correct + Number(result.kind === 'correct'), xp: previousXp + gained }
+  track.result.xp = gained
   return true
 }
 

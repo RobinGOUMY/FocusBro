@@ -24,7 +24,7 @@
 .pass-hero-loot { display: grid; justify-items: center; gap: 9px; padding: 18px 10px; border: 1px solid var(--line); border-radius: 15px; background: var(--base); text-align: center; }
 .pass-loot-label { color: var(--amber); font-size: 10px; font-weight: 800; letter-spacing: .13em; }
 .pass-hero-loot small { color: var(--muted); font-size: 12px; }
-.pass-loot-art { display: flex; gap: 8px; }
+.pass-loot-art { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .pass-loot-art .cosmetic-art { width: clamp(48px, 6vw, 76px); height: clamp(48px, 6vw, 76px); border-radius: 14px; font-size: 31px; }
 .pass-loot-art .cosmetic-art svg { width: 36px; height: 36px; }
 .pass-loot-art .avatar-emoji { font-size: 34px; }
@@ -74,6 +74,32 @@
 .tier-starter summary { cursor: pointer; padding: 9px 7px; border-radius: 8px; background: var(--base); color: var(--accent); font-size: 11px; font-weight: 750; }
 .tier-starter .tier-rewards { margin-top: 6px; }
 .pass-footer, .arcade-footer { margin-top: 20px; }
+.journey-guide { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; margin-top: 14px; }
+.journey-guide h2 { font-size: 19px; }
+.journey-guide p { margin-top: 6px; color: var(--text); font-size: 15px; line-height: 1.65; }
+.journey-guide details, .journey-guide > .btn, .journey-guide > p { grid-column: 1 / -1; }
+.journey-guide ul { display: grid; gap: 6px; padding-left: 20px; margin-top: 9px; font-size: 14px; line-height: 1.6; color: var(--muted); }
+.journey-destination { display: grid; align-content: center; gap: 5px; max-width: 220px; padding: 13px; border: 1px solid var(--line); border-radius: 12px; color: var(--accent); background: var(--base); }
+.journey-destination span { font-size: 13px; }
+.journey-requirements { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 13px 0 17px; }
+.journey-requirements > div { min-width: 0; }
+.journey-requirements span { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; }
+.journey-requirements strong { display: block; margin-top: 4px; font-size: 14px; }
+.journey-requirements .meter { margin-top: 6px; }
+.pass-supply { display: grid; justify-items: center; gap: 7px; padding: 12px 5px; border: 1px solid var(--line); border-radius: 10px; background: var(--amber-bg); color: var(--amber); }
+.pass-supply strong { font-size: 16px; }
+.pass-supply span { font-size: 12px; }
+.pass-supply .btn { min-height: 36px; font-size: 12px; }
+.profile-frame[data-frame='laurel'], .cosmetic-art[data-design='laurel'] { border-style: double; border-width: 4px; border-radius: 35% 50% 35% 50%; }
+.profile-banner[data-design='observatory']::before { background: radial-gradient(circle at 77% 58%, transparent 0 23%, #a7dfff88 24% 24.4%, transparent 25% 35%, #ffe6a466 36% 36.4%, transparent 37%), radial-gradient(circle, #ffe6a4 0 1px, transparent 2px) 0 0 / 36px 29px; }
+.flight-trail[data-trail='solar-wind'] i { border-radius: 0 100% 100% 0; width: 12px; height: 3px; }
+
+@media (max-width: 660px) {
+  .journey-guide { grid-template-columns: minmax(0, 1fr); }
+  .journey-destination { max-width: none; }
+  .pass-hero-loot:has(.pass-loot-art > :nth-child(4)) { grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 8px; }
+  .pass-hero-loot:has(.pass-loot-art > :nth-child(4)) .pass-loot-art { grid-column: 1; grid-row: auto; }
+}
 
 .profile-overview { align-items: stretch; }
 .profile-banner { position: relative; isolation: isolate; display: grid; align-content: space-between; gap: 24px; min-height: 193px; overflow: hidden; padding: clamp(16px, 3vw, 29px); background: radial-gradient(ellipse at 96% 0%, color-mix(in srgb, var(--banner-color) 45%, var(--surface)), transparent 74%), linear-gradient(135deg, var(--accent-soft), var(--surface)); border-color: color-mix(in srgb, var(--banner-color) 60%, var(--line)); }

@@ -6,7 +6,9 @@ import { courseById } from './courses.js'
 import { focusActivity } from './focus-activities.js'
 import { advanceMathTrack, beginMathTrack, mathContext, recordMathAttempt, skillForCard } from './math-practice.js'
 import { claimDailyMission } from './missions.js'
-import { buyCosmetic, equipCosmetic, equippedCosmetic } from './pass.js'
+import { buyCosmetic, claimPassRewards, equipCosmetic, equippedCosmetic } from './pass.js'
+import { rewardExplanation, syncJourney } from './progression.js'
+import { claimWeeklyBacklog, claimWeeklyMission } from './weekly-missions.js'
 import { missionsView, shopView } from './shop-view.js'
 import { createState, dayKey, freshTimer, gradeCard, isCourseWorked, levelInfo, mathReviewContext, remainingTime, restoreState, reviewCards, settleTimer, shuffle, storageKey, studyStats } from './study.js'
 import { accountForm, accountPanel, brandLogo, cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, passView, profileView, progressView, readerView, suggestedChallenge, themeGalleryView } from './views.js'
@@ -55,9 +57,11 @@ async function commit(change) {
   const operation = () => {
     if (!cloud.current()) return false
     const next = (persistenceFailed ? null : readState()) ?? state
-    const previousLevel = levelInfo(studyStats(next).xp).index
+    const before = studyStats(next)
+    const previousLevel = levelInfo(before.xp, before.studyDays).index
     const finished = settleTimer(next)
     const result = change(next)
+    syncJourney(next)
     state = next
     if (finished && page !== 'focus' && next.timer.status === 'ready' && sound !== 'off') {
       sound = 'off'
@@ -72,7 +76,8 @@ async function commit(change) {
         persistenceFailed = true
       }
     }
-    const unlocked = levelInfo(studyStats(state).xp)
+    const after = studyStats(state)
+    const unlocked = levelInfo(after.xp, after.studyDays)
     if (unlocked.index > previousLevel) celebrate(`Niveau ${unlocked.current.number} · ${unlocked.current.title}`, 'De nouvelles récompenses t’attendent dans le Pass Focus.')
     else if (finished === 'focus') celebrate('Session terminée · +50 XP', 'Tu as bien mérité cinq minutes de pause.')
     else if (finished === 'break') {
@@ -513,6 +518,21 @@ const actions = {
     render({ preserveForm: true, focus: `[data-mission="${value}"] h3` })
     if (result) celebrate(`+${result.tokens + result.bonus} jetons`, result.bonus ? 'Mission validée et bonus trio récupéré.' : 'Récompense de mission récupérée.')
   },
+  'claim-weekly': async ({ value, week }) => {
+    const result = await commit(next => claimWeeklyMission(next, value, week))
+    render({ preserveForm: true, focus: `[data-weekly="${value}"] h3` })
+    if (result) celebrate(`+${result.xp} XP · +${result.tokens} jetons`, 'Objectif de la semaine validé.')
+  },
+  'claim-weekly-backlog': async () => {
+    const result = await commit(next => claimWeeklyBacklog(next))
+    render({ preserveForm: true, focus: '#weekly-title' })
+    if (result) celebrate(`+${result.xp} XP · +${result.tokens} jetons`, 'Bonus des semaines précédentes récupérés.')
+  },
+  'claim-pass': async ({ value }) => {
+    const tokens = await commit(next => claimPassRewards(next, value))
+    render({ preserveForm: true, focus: value ? `[data-tier-id="${value}"] h3` : '#pass-rewards' })
+    if (tokens) celebrate(`+${tokens} jetons`, 'Récompenses du parcours récupérées.')
+  },
   'buy-cosmetic': async ({ type, value }) => {
     const item = await commit(next => buyCosmetic(next, type, value, studyStats(next).xp))
     render({ preserveForm: true, focus: `[data-type="${type}"][data-value="${value}"]` })
@@ -615,11 +635,11 @@ const forms = {
       const identity = course ? { title: course.title, subject: course.subject, course: course.id } : { title: previous.title, subject: previous.subject }
       const note = { id: previous?.id ?? id, ...identity, ...values, updatedAt, createdAt: previous?.createdAt ?? updatedAt }
       next.notes = [...next.notes.filter(item => item.id !== note.id), note]
-      return true
+      return { xp: rewardExplanation(next, note, updatedAt, previous) }
     })
     if (!course) selectedNote = saved ? id : ''
     render({ focus: course && saved ? '.guide-model summary' : '[name="body"]' })
-    notify(saved ? 'Explication enregistrée' : 'Cette note a été supprimée dans un autre onglet.')
+    notify(saved?.xp ? `Explication enregistrée · +${saved.xp} XP` : saved ? 'Explication enregistrée' : 'Cette note a été supprimée dans un autre onglet.')
   },
   'card-form': async (form, values) => {
     if (!values.question || !values.answer || !hasSubject(values.subject)) {
