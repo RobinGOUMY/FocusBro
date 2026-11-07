@@ -9,7 +9,7 @@ import { claimDailyMission } from './missions.js'
 import { buyCosmetic, equipCosmetic, equippedCosmetic } from './pass.js'
 import { missionsView, shopView } from './shop-view.js'
 import { createState, dayKey, freshTimer, gradeCard, isCourseWorked, levelInfo, mathReviewContext, remainingTime, restoreState, reviewCards, settleTimer, shuffle, storageKey, studyStats } from './study.js'
-import { accountForm, accountPanel, cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, passView, profileView, progressView, readerView, suggestedChallenge, themeGalleryView } from './views.js'
+import { accountForm, accountPanel, brandLogo, cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, passView, profileView, progressView, readerView, suggestedChallenge, themeGalleryView } from './views.js'
 
 const app = document.querySelector('#app')
 const dialog = document.querySelector('#dialog')
@@ -118,7 +118,10 @@ function render({ preserveForm = false, focus } = {}) {
   const root = document.documentElement
   if (root.dataset.theme !== theme.id) {
     root.dataset.theme = theme.id
-    document.querySelector('meta[name="theme-color"]').content = getComputedStyle(root).getPropertyValue('--sidebar').trim()
+    const palette = getComputedStyle(root)
+    document.querySelector('meta[name="theme-color"]').content = palette.getPropertyValue('--sidebar').trim()
+    const logo = brandLogo(64, palette.getPropertyValue('--accent').trim(), palette.getPropertyValue('--accent-ink').trim())
+    document.querySelector('link[rel="icon"]').href = `data:image/svg+xml,${encodeURIComponent(logo)}`
   }
   app.innerHTML = layout(state, page, content)
   app.querySelectorAll('main details').forEach((detail, index) => {

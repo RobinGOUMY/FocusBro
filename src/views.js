@@ -66,6 +66,13 @@ export function icon(name, size = 20) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${glyphs[name]}</svg>`
 }
 
+export function brandLogo(size, background = 'var(--accent)', foreground = 'var(--accent-ink)') {
+  return `<svg class="brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true" focusable="false">
+    <rect x="2" y="2" width="60" height="60" rx="18" fill="${background}"/>
+    <path d="M35 12 18 35h12l-2 17 18-24H33z" fill="${foreground}" stroke="${foreground}" stroke-linejoin="round" stroke-width="3"/>
+  </svg>`
+}
+
 export const pages = [
   { id: 'accueil', name: 'Tableau de bord', mobile: 'Accueil', icon: 'grid' },
   { id: 'cours', name: 'Bibliothèque de cours', mobile: 'Cours', icon: 'book' },
@@ -132,7 +139,7 @@ export function layout(state, page, content) {
   const float = floatingTimer(state.timer)
   const currentPage = pages.find(item => item.id === page)
   return `<aside class="sidebar">
-    <a class="brand" href="#accueil"><img src="./assets/bolt.svg" width="38" height="38" alt=""><span>Focus<span>Bro</span><small>ESPACE DE RÉVISION</small></span></a>
+    <a class="brand" href="#accueil">${brandLogo(38)}<span>Focus<span>Bro</span><small>ESPACE DE RÉVISION</small></span></a>
     <nav class="main-nav" aria-label="Navigation principale">${navGroups.map(([title, ids]) => `<div class="nav-group"><p class="nav-caption">${title}</p>${ids.map(id => navItem(pages.find(item => item.id === id), page)).join('')}</div>`).join('')}</nav>
     <div class="sidebar-bottom">
       <a class="sidebar-level" href="#pass">
@@ -145,7 +152,7 @@ export function layout(state, page, content) {
   </aside>
   <div class="workspace${float ? ' has-focus-float' : ''}">
     <header class="topbar">
-      <a class="brand mobile-brand" href="#accueil"><img src="./assets/bolt.svg" width="34" height="34" alt=""><span>Focus<span>Bro</span></span></a>
+      <a class="brand mobile-brand" href="#accueil">${brandLogo(34)}<span>Focus<span>Bro</span></span></a>
       <div class="workspace-path">${icon(currentPage.icon, 16)}<span>${currentPage.name}</span></div>
       <div class="top-actions">
         <span class="today-date">${icon('calendar', 16)} <span>${weekday.format(new Date())}</span></span>

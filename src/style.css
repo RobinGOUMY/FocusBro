@@ -469,7 +469,7 @@ body:has(.focus-float) .toast { bottom: calc(80px + env(safe-area-inset-bottom))
 @media (max-width: 359px) {
   .has-focus-float .topbar { gap: 5px; padding-inline: 8px; }
   .has-focus-float .mobile-brand { gap: 5px; }
-  .has-focus-float .mobile-brand img { width: 28px; height: 28px; }
+  .has-focus-float .mobile-brand .brand-logo { width: 28px; height: 28px; }
   .brand > span { font-size: 17px; }
   .top-actions { gap: 5px; }
   .xp-pill { padding-inline: 6px; }
