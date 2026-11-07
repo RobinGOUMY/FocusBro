@@ -19,12 +19,17 @@ export function createState() {
     mathPractice: createMathPractice(),
     profile: { name: '', ...defaultCosmetics(), volume: 40, chime: true },
     arcade: { records: {}, days: {}, recent: [] },
+    shop: { tokens: 0, owned: [], claimed: {} },
   }
 }
 
 export function restoreState(stored) {
   const defaults = createState()
-  const state = { ...defaults, ...stored, profile: { ...defaults.profile, ...stored.profile } }
+  const state = {
+    ...defaults, ...stored,
+    profile: { ...defaults.profile, ...stored.profile },
+    shop: { ...defaults.shop, ...stored.shop },
+  }
   if (state.timer.subject && !hasSubject(state.timer.subject)) {
     state.timer = { ...state.timer, subject: 'autre', activity: null }
   }

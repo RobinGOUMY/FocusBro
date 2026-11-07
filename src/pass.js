@@ -2,6 +2,10 @@ export const cosmeticTypes = {
   theme: 'Thème', avatar: 'Avatar', frame: 'Cadre', banner: 'Bannière', trail: 'Traînée', title: 'Titre',
 }
 
+export const cosmeticCategories = {
+  theme: 'Thèmes', avatar: 'Avatars', frame: 'Cadres', banner: 'Bannières', trail: 'Traînées', title: 'Titres',
+}
+
 const milestones = [
   [0, 'Novice', [
     ['theme', 'violet', 'Violet'], ['avatar', 'bolt', 'Éclair', '⚡'],
@@ -34,7 +38,48 @@ export const levels = milestones.map(([xp, title, items], index) => ({
   rewards: items.map(([type, id, label, visual]) => ({ type, id, label, visual, xp, level: index + 1 })),
 }))
 
-export const cosmetics = levels.flatMap(level => level.rewards)
+export const passCosmetics = levels.flatMap(level => level.rewards)
+
+export const shopCollections = [
+  { name: 'Atelier cosy', description: 'Des tons pêche pour tes sessions au calme.', palette: 'peach', items: [
+    ['avatar', 'cat', 'Chat de bureau', '🐈', 15, 0],
+    ['title', 'tea-break', 'Pause thé', '♨', 20, 0],
+    ['frame', 'porcelain', 'Porcelaine', '#e3a66c', 25, 0],
+    ['trail', 'petals', 'Pétales', '#ffb8bc', 30, 50],
+    ['banner', 'gingham', 'Nappe à carreaux', '#f4ab87', 40, 100],
+    ['theme', 'peach', 'Pêche givrée', null, 60, 100],
+  ] },
+  { name: 'Sous-bois', description: 'Mousse, fougères et une loutre en vadrouille.', palette: 'canopy', items: [
+    ['avatar', 'otter', 'Loutre curieuse', '🦦', 25, 0],
+    ['title', 'forest-scout', 'Pisteur du savoir', '❧', 30, 50],
+    ['frame', 'ivy', 'Lierre', '#69c58e', 35, 100],
+    ['trail', 'fireflies', 'Lucioles', '#edff91', 45, 150],
+    ['banner', 'ferns', 'Fougères', '#83d5a2', 50, 150],
+    ['theme', 'canopy', 'Canopée', null, 75, 225],
+  ] },
+  { name: 'Pixel club', description: 'L’esprit des salles d’arcade rétro.', palette: 'pixel-night', items: [
+    ['avatar', 'alien', 'Alien rétro', '👾', 35, 150],
+    ['title', 'combo-keeper', 'Machine à combos', '⚑', 45, 225],
+    ['frame', 'pixel-cut', 'Bits roses', '#fb80c5', 45, 300],
+    ['trail', 'bitstream', 'Flux de bits', '#77ffdf', 55, 400],
+    ['banner', 'scanlines', 'Écran cathodique', '#a996ff', 65, 500],
+    ['theme', 'pixel-night', 'Nuit pixel', null, 90, 650],
+  ] },
+  { name: 'Station astrale', description: 'Des équipements pour réviser en orbite.', palette: 'deep-space', items: [
+    ['avatar', 'astronaut', 'Astronaute lunaire', '🧑‍🚀', 55, 400],
+    ['title', 'moon-pilot', 'Pilote de comètes', '☾', 65, 500],
+    ['frame', 'orbit-ring', 'Anneaux de Saturne', '#fad789', 70, 650],
+    ['trail', 'comets', 'Queue de comète', '#a9dfff', 80, 800],
+    ['banner', 'constellations', 'Carte du ciel', '#8aaeff', 90, 1000],
+    ['theme', 'deep-space', 'Espace profond', null, 120, 1200],
+  ] },
+].map(collection => ({
+  ...collection,
+  items: collection.items.map(([type, id, label, visual, price, xp]) => ({ type, id, label, visual, price, xp })),
+}))
+
+export const shopItems = shopCollections.flatMap(collection => collection.items)
+export const cosmetics = [...passCosmetics, ...shopItems]
 
 export function findCosmetic(type, id) {
   return cosmetics.find(item => item.type === type && item.id === id)
@@ -48,9 +93,21 @@ export function equippedCosmetic(profile, type) {
   return findCosmetic(type, profile[type]) ?? levels[0].rewards.find(item => item.type === type)
 }
 
+export function ownsCosmetic(state, item, xp) {
+  return item.price ? state.shop.owned.includes(item.id) : xp >= item.xp
+}
+
 export function equipCosmetic(state, type, id, xp) {
   const item = findCosmetic(type, id)
-  if (!item || item.xp > xp || state.profile[type] === id) return false
+  if (!item || !ownsCosmetic(state, item, xp) || state.profile[type] === id) return false
   state.profile[type] = id
+  return item
+}
+
+export function buyCosmetic(state, type, id, xp) {
+  const item = findCosmetic(type, id)
+  if (!item?.price || xp < item.xp || state.shop.tokens < item.price || ownsCosmetic(state, item, xp)) return false
+  state.shop.tokens -= item.price
+  state.shop.owned.push(id)
   return item
 }

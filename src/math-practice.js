@@ -152,7 +152,8 @@ export function recordMathAttempt(model, context, current, values, day) {
   }
   track.answered += 1
   track.result = { ...result, recovered: recovering && stats.recovery === 0 }
-  model.days[day] = true
+  const correct = model.days[day]?.correct ?? 0
+  model.days[day] = { correct: correct + Number(result.kind === 'correct') }
   return true
 }
 

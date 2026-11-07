@@ -5,7 +5,9 @@ import { hasSubject } from './content.js'
 import { courseById } from './courses.js'
 import { focusActivity } from './focus-activities.js'
 import { advanceMathTrack, beginMathTrack, mathContext, recordMathAttempt, skillForCard } from './math-practice.js'
-import { equipCosmetic, equippedCosmetic } from './pass.js'
+import { claimDailyMission } from './missions.js'
+import { buyCosmetic, equipCosmetic, equippedCosmetic } from './pass.js'
+import { missionsView, shopView } from './shop-view.js'
 import { createState, dayKey, freshTimer, gradeCard, isCourseWorked, levelInfo, mathReviewContext, remainingTime, restoreState, reviewCards, settleTimer, shuffle, storageKey, studyStats } from './study.js'
 import { accountForm, accountPanel, cardForm, courseResults, customCardList, dashboard, escapeHtml, flashcardsView, focusView, formatClock, feynmanView, icon, layout, libraryView, mathView, pages, passView, profileView, progressView, readerView, suggestedChallenge, themeGalleryView } from './views.js'
 
@@ -108,6 +110,7 @@ function render({ preserveForm = false, focus } = {}) {
     feynman: () => feynmanView(state, challengeId, selectedNote),
     arcade: () => arcade.view(state),
     pass: () => routeDetail() === 'themes' ? themeGalleryView(state) : passView(state),
+    boutique: () => routeDetail() === 'missions' ? missionsView(state) : shopView(state, routeDetail()),
     progression: () => progressView(state),
     profil: () => profileView(state, cloud.info()),
   }[page]()
@@ -501,6 +504,16 @@ const actions = {
     const tier = document.getElementById(`pass-tier-${value}`)
     tier?.focus({ preventScroll: true })
     tier?.scrollIntoView({ block: 'nearest' })
+  },
+  'claim-mission': async ({ value, day }) => {
+    const result = await commit(next => claimDailyMission(next, value, day))
+    render({ preserveForm: true, focus: `[data-mission="${value}"] h3` })
+    if (result) celebrate(`+${result.tokens + result.bonus} jetons`, result.bonus ? 'Mission validée et bonus trio récupéré.' : 'Récompense de mission récupérée.')
+  },
+  'buy-cosmetic': async ({ type, value }) => {
+    const item = await commit(next => buyCosmetic(next, type, value, studyStats(next).xp))
+    render({ preserveForm: true, focus: `[data-type="${type}"][data-value="${value}"]` })
+    if (item) notify('Objet ajouté à ton vestiaire', item.label)
   },
   reward: async ({ type, value }) => {
     const item = await commit(next => equipCosmetic(next, type, value, studyStats(next).xp))

@@ -1,0 +1,134 @@
+.mission-teaser {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 11px;
+  margin-top: 13px; padding: 10px 13px; background: linear-gradient(100deg, var(--amber-bg), var(--surface) 70%);
+}
+.mission-teaser:hover { border-color: var(--amber); }
+.mission-teaser strong, .mission-teaser small { display: block; }
+.mission-teaser strong { font-size: 14px; }
+.mission-teaser small { color: var(--muted); font-size: 12px; }
+.mission-teaser-action, .mission-teaser > svg { color: var(--amber); }
+.mission-teaser-action { font-size: 12px; font-weight: 800; }
+
+.loot-hero {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 18px;
+  padding: clamp(16px, 3vw, 34px);
+  border-color: color-mix(in srgb, var(--amber) 28%, var(--line));
+  background: radial-gradient(ellipse at 98% 0%, var(--amber-bg), transparent 65%), linear-gradient(125deg, var(--accent-soft), var(--surface) 66%);
+}
+.loot-hero .page-heading { margin: 0 0 18px; }
+.loot-hero .page-heading h1 { font-size: clamp(30px, 5vw, 54px); }
+.loot-hero .page-heading p { max-width: 58ch; }
+.loot-nav, .shop-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.loot-nav .btn { min-height: 40px; }
+:is(.loot-nav, .shop-filters) a[aria-current='page'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.loot-wallet {
+  display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 15px;
+  background: var(--base); min-width: 173px;
+}
+.loot-wallet-icon {
+  display: grid; flex: none; place-items: center; width: 49px; height: 49px; border: 1px solid currentColor;
+  border-radius: 50%; color: var(--amber); background: var(--amber-bg); box-shadow: inset 0 0 0 4px var(--base);
+}
+.loot-wallet div { display: grid; gap: 2px; }
+.loot-wallet div > span { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: var(--amber); }
+.loot-wallet strong { font-size: clamp(20px, 3vw, 30px); line-height: 1.1; letter-spacing: -.04em; overflow-wrap: anywhere; }
+.loot-section-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 23px 0 11px; }
+.loot-section-heading h2 { font-size: clamp(22px, 3vw, 29px); letter-spacing: -.04em; }
+.loot-chip, .loot-price { display: inline-flex; align-items: center; gap: 5px; color: var(--amber); font-size: 11px; font-weight: 800; }
+.loot-chip { width: fit-content; padding: 5px 9px; border: 1px solid var(--line); border-radius: 20px; background: var(--base); }
+.daily-mission-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.daily-mission { display: grid; grid-template-rows: auto 1fr auto auto; align-items: start; gap: 13px; padding: clamp(12px, 2vw, 19px); }
+.daily-mission[data-ready='true'] { border-color: var(--mint); background: linear-gradient(155deg, var(--mint-bg), var(--surface) 72%); }
+.daily-mission-top { display: flex; justify-content: space-between; align-items: center; gap: 5px; }
+.daily-mission-copy h3 { margin: 3px 0 4px; font-size: clamp(18px, 2vw, 22px); letter-spacing: -.035em; }
+.daily-mission-copy p:not(.section-kicker), .loot-bonus p { color: var(--muted); font-size: 13px; }
+.daily-mission-progress { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 750; }
+.daily-mission-progress progress {
+  appearance: none; flex: 1; width: 100%; min-width: 0; height: 7px; border: 0; border-radius: 10px; overflow: hidden;
+  background: var(--raised); accent-color: var(--accent);
+}
+.daily-mission-progress progress::-webkit-progress-bar { background: var(--raised); }
+.daily-mission-progress progress::-webkit-progress-value { background: var(--accent); border-radius: 10px; }
+.daily-mission-progress progress::-moz-progress-bar { background: var(--accent); border-radius: 10px; }
+.daily-mission .btn { width: 100%; justify-content: space-between; }
+.daily-mission-collected { display: flex; min-height: 42px; align-items: center; gap: 6px; color: var(--mint); font-size: 12px; font-weight: 800; }
+.loot-bonus {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px; margin-top: 12px;
+  background: linear-gradient(110deg, var(--amber-bg), var(--surface) 68%);
+}
+.loot-bonus > div { flex: 1 1 180px; }
+.loot-bonus h2 { font-size: 17px; }
+
+.shop-filters { margin-bottom: 13px; }
+.shop-filters .btn { min-height: 36px; padding-inline: 11px; font-size: 12px; }
+.shop-collection + .shop-collection { margin-top: 23px; }
+.shop-collection-heading { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.shop-collection-heading h2 { font-size: 19px; letter-spacing: -.035em; }
+.shop-collection-heading p { color: var(--muted); font-size: 12px; }
+[data-collection='peach'] { --loot-color: #f4a78a; }
+[data-collection='canopy'] { --loot-color: #82c69d; }
+[data-collection='pixel-night'] { --loot-color: #e698e2; }
+[data-collection='deep-space'] { --loot-color: #91bfff; }
+.shop-collection-mark {
+  display: grid; flex: none; place-items: center; width: 39px; height: 39px; border: 1px solid var(--line);
+  border-radius: 10px; color: var(--text); background: color-mix(in srgb, var(--loot-color) 30%, var(--surface));
+}
+.shop-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.shop-card { display: grid; grid-template-rows: auto 1fr; min-width: 0; overflow: hidden; }
+.shop-card-art {
+  position: relative; display: grid; place-items: center; height: 112px; border-bottom: 1px solid var(--line);
+  background: radial-gradient(ellipse at 50% 64%, color-mix(in srgb, var(--loot-color) 34%, var(--surface)), transparent 72%),
+    repeating-linear-gradient(130deg, transparent 0 16px, var(--banner-pattern) 17px 18px), var(--base);
+}
+.shop-card-art .cosmetic-art { width: 64px; height: 64px; font-size: 31px; box-shadow: 0 8px 15px #0002; }
+.shop-card-art .cosmetic-art svg { width: 30px; height: 30px; }
+.shop-card-art .avatar-emoji { font-size: 37px; }
+.shop-card-art .theme-preview { width: min(67%, 146px); height: auto; aspect-ratio: 2; }
+.shop-card-tag {
+  position: absolute; top: 6px; left: 6px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 20px;
+  background: var(--base); color: var(--muted); font-size: 10px; font-weight: 750;
+}
+.shop-card-content { display: grid; grid-template-rows: auto 1fr auto auto; gap: 3px; padding: 10px; }
+.shop-card-collection { color: var(--quiet); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .075em; }
+.shop-collection .shop-card-collection { display: none; }
+.shop-collection .shop-card-content { grid-template-rows: 1fr auto auto; }
+.shop-card h3 { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.shop-card p { color: var(--muted); font-size: 11px; }
+.shop-card-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+.shop-card-actions .btn { min-height: 36px; padding-inline: 8px; font-size: 11px; }
+.shop-card-actions .btn[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); }
+.loot-price svg { flex: none; }
+
+.profile-frame[data-frame='pixel-cut'], .cosmetic-art[data-design='pixel-cut'] { border-radius: 22%; border-style: dashed; }
+.profile-frame[data-frame='orbit-ring'], .cosmetic-art[data-design='orbit-ring'] { border-style: double; border-width: 4px; }
+.profile-frame[data-frame='porcelain'], .cosmetic-art[data-design='porcelain'] { border-style: dotted; }
+.profile-frame[data-frame='ivy'], .cosmetic-art[data-design='ivy'] { border-radius: 50% 31% 50% 31%; }
+[data-design='gingham'] { --loot-pattern: repeating-linear-gradient(0deg, transparent 0 9px, #f4ab8755 10px 18px), repeating-linear-gradient(90deg, transparent 0 9px, #f4ab8755 10px 18px); }
+[data-design='ferns'] { --loot-pattern: repeating-linear-gradient(36deg, transparent 0 9px, #83d5a266 10px 12px, transparent 13px 20px); }
+[data-design='scanlines'] { --loot-pattern: repeating-linear-gradient(0deg, transparent 0 3px, #a996ff80 4px 5px); }
+[data-design='constellations'] { --loot-pattern: radial-gradient(circle, #8aaeffc0 0 1px, transparent 2px) 0 0 / 18px 23px, radial-gradient(circle, #8aaeff96 0 1px, transparent 2px) 9px 5px / 32px 33px; }
+.profile-banner:is([data-design='gingham'], [data-design='ferns'], [data-design='scanlines'], [data-design='constellations'])::before { background: var(--loot-pattern); }
+.cosmetic-art:is([data-design='gingham'], [data-design='ferns'], [data-design='scanlines'], [data-design='constellations']) { background: var(--loot-pattern), var(--surface); }
+.flight-trail:is([data-trail='petals'], [data-trail='bitstream'], [data-trail='comets']) i { border-radius: 0; }
+.flight-trail[data-trail='petals'] i { rotate: 38deg; border-radius: 62% 28% 62% 28%; }
+.flight-trail[data-trail='fireflies'] i { box-shadow: 0 0 7px 1px currentColor; }
+.flight-trail[data-trail='comets'] i { width: 11px; height: 2px; background: linear-gradient(90deg, transparent, currentColor); }
+
+@media (max-width: 660px) {
+  .loot-hero { grid-template-columns: minmax(0, 1fr); gap: 11px; }
+  .loot-hero .page-heading { margin-bottom: 12px; }
+  .loot-wallet { width: fit-content; min-width: 0; padding: 6px 13px 6px 6px; }
+  .loot-wallet-icon { width: 34px; height: 34px; box-shadow: none; }
+  .loot-wallet-icon svg { width: 23px; height: 23px; }
+  .daily-mission-grid { grid-template-columns: minmax(0, 1fr); }
+  .daily-mission { gap: 8px; }
+  .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .shop-card-art { height: 90px; }
+  .shop-card-art .cosmetic-art:not(.theme-preview) { width: 52px; height: 52px; }
+}
+
+@media (max-width: 420px) {
+  .mission-teaser { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .mission-teaser-action { display: none; }
+  .shop-card-actions { align-items: stretch; flex-direction: column; }
+}

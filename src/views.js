@@ -3,7 +3,8 @@ import { courseById, courses } from './courses.js'
 import { focusActivities, focusActivity } from './focus-activities.js'
 import { courseExerciseSkills, mathSkills, problemFor, skillById, skillForCard } from './math-practice.js'
 import { arcadeModes } from './arcade.js'
-import { cosmetics, cosmeticTypes, equippedCosmetic, levels } from './pass.js'
+import { dailyMissions } from './missions.js'
+import { cosmeticCategories, cosmetics, cosmeticTypes, equippedCosmetic, levels, ownsCosmetic, passCosmetics } from './pass.js'
 import { availableCustomCards, dailyGoal, dayKey, isCourseWorked, levelInfo, remainingTime, reviewCards, studyStats, weekActivity } from './study.js'
 
 const glyphs = {
@@ -52,6 +53,12 @@ const glyphs = {
   arcade: '<path d="M7 7h10a4 4 0 0 1 4 3.5l1 5.5a2.5 2.5 0 0 1-4.2 2.3L15 16H9l-2.8 2.3A2.5 2.5 0 0 1 2 16l1-5.5A4 4 0 0 1 7 7Z"/><path d="M6 12h5m-2.5-2.5v5m7.5-2.5h.01m3 2h.01"/>',
   flight: '<path d="m3 12 18-8-6 17-3.5-7.5L3 12Zm8.5 1.5L21 4"/>',
   gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12m0-12H8.5A2.5 2.5 0 1 1 11 5.5L12 8Zm0 0h3.5A2.5 2.5 0 1 0 13 5.5L12 8Z"/>',
+  shop: '<path d="M4 9h16l1 12H3L4 9Zm4 1V6a4 4 0 0 1 8 0v4"/>',
+  coin: '<circle cx="12" cy="12" r="9"/><path d="m12 7 3 5-3 5-3-5 3-5Z"/>',
+  slice: '<path d="M3 21 17 7l4-4-2 7-5 5-4 1-2 2M4 8l4 4m2-9 2 4M3 15h3"/>',
+  snake: '<path d="M21 6h-8a3 3 0 0 0 0 6h3a3 3 0 0 1 0 6H3m15-12v.01"/>',
+  rail: '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M9 17l-3 4m9-4 3 4m-9-7h.01m6 0h.01"/>',
+  sling: '<path d="M12 21V11L5 4m7 7 7-7M5 4h14m-7-3v3"/>',
 }
 
 export function icon(name, size = 20) {
@@ -67,6 +74,7 @@ export const pages = [
   { id: 'feynman', name: 'Carnet Feynman', mobile: 'Carnet', icon: 'pen' },
   { id: 'arcade', name: 'Arcade', mobile: 'Arcade', icon: 'arcade' },
   { id: 'pass', name: 'Pass Focus', icon: 'gift' },
+  { id: 'boutique', name: 'Missions et boutique', mobile: 'Butin', icon: 'shop' },
   { id: 'progression', name: 'Progression', icon: 'chart' },
   { id: 'profil', name: 'Personnalisation', icon: 'settings' },
 ]
@@ -74,7 +82,7 @@ export const pages = [
 const navGroups = [
   ['Espace d’étude', ['accueil', 'cours', 'focus']],
   ['Révisions', ['flashcards', 'exercices', 'feynman']],
-  ['Jeu et progression', ['arcade', 'pass', 'progression']],
+  ['Jeu et progression', ['arcade', 'pass', 'boutique', 'progression']],
 ]
 
 export const sounds = [
@@ -146,6 +154,7 @@ export function layout(state, page, content) {
       </div>
     </header>
     <main id="main-content" class="main-content" tabindex="-1">${content}</main>
+    <footer class="site-credit">Créé par <a href="https://github.com/RobinGOUMY" target="_blank" rel="noopener noreferrer" aria-label="RobinGOUMY sur GitHub (nouvel onglet)">RobinGOUMY · GitHub ${icon('arrow', 13)}</a></footer>
   </div>
   <nav class="mobile-nav" aria-label="Navigation principale">${pages.filter(item => item.mobile).map(item => navItem(item, page, true)).join('')}</nav>`
 }
@@ -169,6 +178,20 @@ function dailyPanel(state, todayMinutes) {
     <div class="goal-content"><div class="goal-ring" style="--goal:${goal * 100}%" role="progressbar" aria-label="Objectif du jour en minutes" aria-valuenow="${Math.min(todayMinutes, dailyGoal)}" aria-valuemin="0" aria-valuemax="${dailyGoal}"><span><strong>${todayMinutes}</strong><small>/ ${dailyGoal} min</small></span></div><div><h3>${goal === 1 ? 'Objectif atteint' : 'Une session suffit'}</h3><p>${goal === 1 ? 'Tu as pris le temps d’avancer aujourd’hui.' : 'Termine un Pomodoro pour atteindre ton objectif.'}</p></div></div>
     <ul class="goal-week" aria-label="Sessions des sept derniers jours">${weekActivity(state).map(({ date, minutes }, index) => `<li class="${index === 6 ? 'today' : ''}${minutes ? ' done' : ''}" aria-label="${weekday.format(date)} · ${timeLabel(minutes)}"><span>${dayLabel.format(date).slice(0, 1).toUpperCase()}</span><i>${minutes ? icon('check', 12) : ''}</i></li>`).join('')}</ul>
   </section>`
+}
+
+function missionTeaser(state) {
+  const { missions } = dailyMissions(state)
+  const ready = missions.filter(mission => mission.completed && !mission.collected).length
+  const done = missions.filter(mission => mission.completed).length
+  const detail = ready ? countLabel(ready, 'récompense à récupérer', 'récompenses à récupérer')
+    : done === missions.length ? 'Toutes les récompenses récupérées'
+      : `${done} / ${missions.length} missions accomplies`
+  return `<a class="panel mission-teaser" href="#boutique/missions">
+    ${tile(ready ? 'gift' : 'target', 'amber')}
+    <span><strong>Missions du jour</strong><small>${detail}</small></span>
+    <span class="mission-teaser-action">${ready ? 'Récupérer' : 'Voir les missions'}</span>${icon('arrow', 18)}
+  </a>`
 }
 
 export function dashboard(state) {
@@ -196,6 +219,7 @@ export function dashboard(state) {
         ${link(`${icon('play', 17)} ${current?.route ? 'Reprendre l’activité' : active ? 'Revenir à la session' : 'Lancer une session'} ${icon('arrow', 17)}`, current?.route ?? 'focus', 'hero-button')}
       </div>
     </section>${dailyPanel(state, stats.todayMinutes)}</div>
+    ${missionTeaser(state)}
     <section class="stats-grid" aria-label="Mes statistiques">
       ${statCard('fire', 'amber', 'Série en cours', countLabel(stats.streak, 'jour'), 'Jours de révision consécutifs')}
       ${statCard('clock', 'sky', 'Temps en focus', timeLabel(stats.minutes), 'Depuis tes débuts')}
@@ -209,7 +233,7 @@ export function dashboard(state) {
           ${moduleCard('flashcards', 'cards', 'purple', 'Flashcards', 'Retrouve la réponse de mémoire.', due ? `${countLabel(due, 'carte')} à revoir` : 'Rappel actif')}
           ${moduleCard('exercices', 'math', 'amber', 'Exercices de maths', 'Entraîne-toi avec des variantes.', `${mathSkills.length} types d’exercices`)}
           ${moduleCard('feynman', 'pen', 'mint', 'Carnet Feynman', 'Explique avec tes propres mots.', noteCount ? countLabel(noteCount, 'note') : 'Défis guidés')}
-          ${moduleCard('arcade', 'arcade', 'sky', 'Arcade', 'Révise en volant, en sprintant ou en jouant au memory.', '3 mini-jeux')}
+          ${moduleCard('arcade', 'arcade', 'sky', 'Arcade', 'Joue avec les questions de tes chapitres travaillés.', `${Object.keys(arcadeModes).length} mini-jeux`)}
           ${moduleCard('pass', 'gift', 'amber', 'Pass Focus', 'Débloque des récompenses en gagnant de l’XP.', `Niveau ${levelInfo(stats.xp).current.number} sur ${levels.length}`)}
         </div>
       </section>
@@ -234,7 +258,7 @@ export function latestCourse(state) {
 
 const normalize = text => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 
-function workedButton(state, course) {
+export function workedButton(state, course) {
   const worked = isCourseWorked(state, course.id)
   return button(`${icon(worked ? 'check' : 'plus', 16)} ${worked ? 'Travaillé' : 'Pas encore'}`, 'mark-worked', 'secondary worked-toggle', `data-value="${course.id}" aria-pressed="${worked}" aria-label="Chapitre travaillé · ${escapeHtml(course.title)}"`)
 }
@@ -504,7 +528,7 @@ export function progressView(state) {
     ...state.reviews.map(item => ({ ...item, icon: 'cards', title: 'Carte révisée', detail: { easy: 'Facile', medium: 'Moyen', hard: 'Difficile' }[item.grade] })),
     ...state.notes.map(item => ({ ...item, icon: 'pen', title: 'Explication Feynman', detail: item.title, at: item.createdAt, xp: 0 })),
     ...state.arcade.recent.filter(item => item.correct).map(item => ({
-      ...item, icon: 'arcade', title: arcadeModes[item.mode].name, detail: `${item.correct} / ${item.total} ${item.mode === 'memory' ? 'paires' : 'bonnes réponses'}`,
+      ...item, icon: 'arcade', title: arcadeModes[item.mode].name, detail: `${item.correct} / ${item.total} ${{ memory: 'paires', slice: 'cibles', snake: 'éléments dans l’ordre' }[item.mode] ?? 'bonnes réponses'}`,
     })),
   ].filter(item => !item.subject || hasSubject(item.subject)).sort((first, second) => second.at - first.at).slice(0, 8)
   return `${heading('STATISTIQUES', 'Ta progression', 'Retrouve le temps investi et les récompenses gagnées.')}
@@ -527,13 +551,13 @@ export function avatarArt(item, size) {
   return `<span class="avatar-emoji" style="--emoji-size:${size}px" aria-hidden="true">${item.visual}</span>`
 }
 
-function cosmeticArt(item) {
+export function cosmeticArt(item) {
   const { type, visual } = item
   if (type === 'theme') return themePreview(item, 'cosmetic-art')
   const art = { frame: 'target', banner: 'grid', trail: 'flight' }
   const color = visual.startsWith('#') ? visual : 'var(--accent)'
   const mark = type === 'avatar' ? avatarArt(item, 23) : art[type] ? icon(art[type], 22) : visual
-  return `<span class="cosmetic-art" data-kind="${type}" style="--reward-color:${color}" aria-hidden="true">${mark}</span>`
+  return `<span class="cosmetic-art" data-kind="${type}" data-design="${item.id}" style="--reward-color:${color}" aria-hidden="true">${mark}</span>`
 }
 
 function themePreview(item, variant = '') {
@@ -544,7 +568,7 @@ function themePreview(item, variant = '') {
 }
 
 function rewardChoice(item, state, xp) {
-  const locked = xp < item.xp
+  const locked = !ownsCosmetic(state, item, xp)
   const active = state.profile[item.type] === item.id
   const status = locked ? `Niv. ${item.level}` : active ? 'Équipé' : 'Équiper'
   const content = `${cosmeticArt(item)}<span class="cosmetic-copy"><small>${cosmeticTypes[item.type]}</small><strong>${item.label}</strong><span>${status}</span></span>${icon(locked ? 'lock' : active ? 'check' : 'plus', 15)}`
@@ -554,7 +578,7 @@ function rewardChoice(item, state, xp) {
 export function passView(state) {
   const { xp } = studyStats(state)
   const { current, next, progress } = levelInfo(xp)
-  const owned = cosmetics.filter(item => item.xp <= xp).length
+  const owned = passCosmetics.filter(item => item.xp <= xp).length
   const acts = [
     ['Décollage', 'sky'], ['Vitesse de croisière', 'mint'], ['En orbite', 'amber'], ['Au-delà des étoiles', 'purple'],
   ]
@@ -566,7 +590,7 @@ export function passView(state) {
         <div class="pass-meter-caption"><span>${number.format(xp)} XP au total</span><span>${next ? `${number.format(next.xp)} XP pour le prochain palier` : 'Palier final atteint'}</span></div>
         <div class="toolbar-actions">${button(`Voir ${next ? 'le prochain palier' : 'le dernier palier'} ${icon('arrow', 17)}`, 'jump-to-tier', 'primary', `data-value="${(next ?? current).number}"`)}${link('Voir les thèmes', 'pass/themes', 'secondary')}${link('Ma collection', 'profil', 'secondary')}</div>
       </div>
-      <div class="pass-hero-loot"><span class="pass-loot-label">${next ? 'PROCHAIN DÉBLOCAGE' : 'DERNIER PALIER'}</span><div class="pass-loot-art">${(next ?? current).rewards.map(cosmeticArt).join('')}</div><strong>${(next ?? current).rewards.map(item => item.label).join(' + ')}</strong><small>${owned} / ${cosmetics.length} cosmétiques débloqués</small></div>
+      <div class="pass-hero-loot"><span class="pass-loot-label">${next ? 'PROCHAIN DÉBLOCAGE' : 'DERNIER PALIER'}</span><div class="pass-loot-art">${(next ?? current).rewards.map(cosmeticArt).join('')}</div><strong>${(next ?? current).rewards.map(item => item.label).join(' + ')}</strong><small>${owned} / ${passCosmetics.length} cosmétiques débloqués</small></div>
     </section>
     ${acts.map(([name, color], index) => `<section class="pass-act" aria-labelledby="act-${index}">
       <div class="pass-act-heading">${tile('spark', color)}<div><span class="section-kicker">ACTE 0${index + 1}</span><h2 id="act-${index}">${name}</h2></div></div>
@@ -578,12 +602,12 @@ export function passView(state) {
           <div class="tier-heading"><span class="tier-number">${String(level.number).padStart(2, '0')}</span><div><h3>${level.title}</h3><span>${number.format(level.xp)} XP · ${status}</span></div></div>
           ${level.number === 1 ? `<details class="tier-starter"><summary>${level.rewards.length} cosmétiques de départ</summary>${rewards}</details>` : rewards}</li>`
       }).join('')}</ol></section>`).join('')}
-    <div class="toolbar-actions pass-footer">${link(`${icon('arcade', 17)} Jouer dans l’Arcade`, 'arcade', 'primary')}${link('Voir mes statistiques', 'progression', 'secondary')}</div>`
+    <div class="toolbar-actions pass-footer">${link(`${icon('arcade', 17)} Jouer dans l’Arcade`, 'arcade', 'primary')}${link('Voir la boutique', 'boutique', 'secondary')}${link('Voir mes statistiques', 'progression', 'secondary')}</div>`
 }
 
 export function themeGalleryView(state) {
   const { xp } = studyStats(state)
-  const themes = cosmetics.filter(item => item.type === 'theme')
+  const themes = passCosmetics.filter(item => item.type === 'theme')
   return `<a class="back-link" href="#pass">${icon('back', 17)} Retour au Pass Focus</a>
     ${heading('PASS FOCUS', 'Les thèmes du site', 'Choisis une palette pour l’accueil, les cours, le vestiaire et l’Arcade.')}
     <div class="theme-gallery">${themes.map(item => {
@@ -595,7 +619,8 @@ export function themeGalleryView(state) {
       ${themePreview(item)}<div class="theme-card-content"><div><h2>${item.label}</h2><p>Palier ${item.level} · ${number.format(item.xp)} XP</p></div>
         ${button(`${mark} ${status}`, 'reward', 'secondary', `data-type="theme" data-value="${item.id}" aria-label="${status} · ${item.label}" aria-pressed="${active}" ${locked ? 'disabled' : ''}`)}
       </div></article>`
-    }).join('')}</div>`
+    }).join('')}</div>
+    <div class="toolbar-actions pass-footer">${link('Voir les thèmes de la boutique', 'boutique/theme', 'secondary')}</div>`
 }
 
 export function accountPanel({ account, status }) {
@@ -638,9 +663,8 @@ export function profileView(state, account) {
   const banner = equippedCosmetic(state.profile, 'banner')
   const title = equippedCosmetic(state.profile, 'title')
   const trail = equippedCosmetic(state.profile, 'trail')
-  const unlocked = cosmetics.filter(item => item.xp <= xp)
-  const categories = { theme: 'Thèmes', avatar: 'Avatars', frame: 'Cadres', banner: 'Bannières', trail: 'Traînées', title: 'Titres' }
-  return `${heading('PERSONNALISATION', 'Ton vestiaire', 'Mélange les cosmétiques débloqués avec le Pass Focus.')}
+  const unlocked = cosmetics.filter(item => ownsCosmetic(state, item, xp))
+  return `${heading('PERSONNALISATION', 'Ton vestiaire', 'Mélange tes cosmétiques du Pass Focus et de la boutique.')}
     ${accountPanel(account)}
     <div class="progress-grid profile-overview">
       <section class="profile-banner panel" data-design="${banner.id}" style="--banner-color:${banner.visual}" aria-label="Aperçu du profil">
@@ -649,8 +673,8 @@ export function profileView(state, account) {
       </section>
       <section class="panel padded"><div class="panel-title">${tile('settings', 'purple')}<div><h2>Préférences</h2><p>${account.account ? 'Enregistrées dans ton compte.' : 'Enregistrées dans ce navigateur.'}</p></div></div><form id="profile-form" class="stack-form"><label class="field"><span>Prénom ou pseudo</span><input name="name" placeholder="FocusBro" maxlength="24" value="${escapeHtml(state.profile.name)}"></label><label class="toggle-field"><input type="checkbox" name="chime" ${state.profile.chime ? 'checked' : ''}> Jouer un son à la fin d’une session</label><button type="submit" class="btn primary">${icon('check', 17)} Enregistrer</button></form></section>
     </div>
-    <div class="collection-heading"><div><h2>Ma collection</h2><p>${unlocked.length} / ${cosmetics.length} cosmétiques débloqués</p></div>${link(`${icon('gift', 17)} Voir le Pass Focus`, 'pass', 'secondary')}</div>
-    <div class="collection-grid">${Object.entries(categories).map(([type, label]) => {
+    <div class="collection-heading"><div><h2>Ma collection</h2><p>${unlocked.length} / ${cosmetics.length} cosmétiques débloqués</p></div><div class="toolbar-actions">${link(`${icon('gift', 17)} Voir le Pass Focus`, 'pass', 'secondary')}${link(`${icon('shop', 17)} Boutique`, 'boutique', 'secondary')}</div></div>
+    <div class="collection-grid">${Object.entries(cosmeticCategories).map(([type, label]) => {
       const items = unlocked.filter(item => item.type === type)
       return `<section class="panel padded"><h3>${label} <span>${items.length}</span></h3><div class="tier-rewards">${items.map(item => rewardChoice(item, state, xp)).join('')}</div></section>`
     }).join('')}</div>`

@@ -29,7 +29,8 @@
   --banner-pattern: #ffffff10;
 }
 
-:is([data-theme='paper'], [data-palette='paper'], [data-theme='glacier'], [data-palette='glacier'], [data-theme='sakura'], [data-palette='sakura']) {
+:is([data-theme='paper'], [data-palette='paper'], [data-theme='glacier'], [data-palette='glacier'], [data-theme='sakura'], [data-palette='sakura'],
+    [data-theme='peach'], [data-palette='peach'], [data-theme='canopy'], [data-palette='canopy']) {
   color-scheme: light;
   --line: color-mix(in srgb, var(--text) 20%, var(--raised));
   --text: #232939;
@@ -86,4 +87,16 @@
 }
 :is([data-theme='royal'], [data-palette='royal']) {
   --base: #160f22; --sidebar: #21152e; --surface: #2e1d40; --raised: #3d2854; --accent: #ffe39b;
+}
+:is([data-theme='peach'], [data-palette='peach']) {
+  --base: #fcefe6; --sidebar: #f5dfd0; --surface: #fffbf6; --raised: #f9e5d9; --accent: #9c432d;
+}
+:is([data-theme='canopy'], [data-palette='canopy']) {
+  --base: #edf2e4; --sidebar: #e0ebd6; --surface: #fafcf4; --raised: #e3ecd9; --accent: #33633f;
+}
+:is([data-theme='pixel-night'], [data-palette='pixel-night']) {
+  --base: #171024; --sidebar: #20152e; --surface: #2a1c3c; --raised: #39244e; --accent: #f6a6dc;
+}
+:is([data-theme='deep-space'], [data-palette='deep-space']) {
+  --base: #0b1425; --sidebar: #101d33; --surface: #142746; --raised: #1d3455; --accent: #a2e0ff;
 }

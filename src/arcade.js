@@ -1,38 +1,68 @@
+import { setupActionRound } from './arcade-action-games.js'
+import { runnerQuestions, sliceChallenges, snakeChallenges } from './arcade-challenges.js'
 import { arcadeQuestions } from './arcade-questions.js'
+import { courseCards, courses } from './courses.js'
 import { dayKey, isCourseWorked, shuffle } from './study.js'
 
 export const arcadeModes = {
   flight: { name: 'Quiz en vol', icon: 'flight', color: 'sky', min: 1, max: 5 },
   sprint: { name: 'Sprint cérébral', icon: 'bolt', color: 'amber', min: 1, max: 8 },
-  memory: { name: 'Mémo Duo', icon: 'cards', color: 'mint', min: 3, max: 6 },
+  memory: { name: 'Mémo Duo', icon: 'cards', color: 'mint', min: 4, max: 10 },
+  slice: { name: 'Tranche-Méninges', icon: 'slice', color: 'amber', min: 1, max: 3 },
+  snake: { name: 'Snake en ordre', icon: 'snake', color: 'mint', min: 1, max: 1 },
+  runner: { name: 'Rail Express', icon: 'rail', color: 'sky', min: 1, max: 6 },
+  sling: { name: 'Siège du savoir', icon: 'sling', color: 'purple', min: 1, max: 5 },
 }
 export const dailyArcadeXp = 60
 export const xpPerAnswer = 3
 export const sprintDuration = 45_000
 
-export function arcadePool(state, { subject, scope }) {
-  return arcadeQuestions.filter(item => (!subject || item.subject === subject)
-    && (scope === 'all' || isCourseWorked(state, item.course)))
-}
+const memoryBank = [...arcadeQuestions, ...courseCards.map(card => ({
+  ...card, prompt: card.question, explanation: card.answer,
+}))]
+const memoryExercises = courses.map(({ id, subject, exercise }) => ({
+  id: `${id}:exercise`, course: id, subject, prompt: exercise.question, answer: exercise.answer, explanation: exercise.answer,
+}))
+const banks = { memory: memoryBank, slice: sliceChallenges, snake: snakeChallenges, runner: runnerQuestions }
+const memoryKey = text => text.toLowerCase().trim().replace(/[.!?…]+$/u, '')
 
-export function arcadeQuestionCount(pool, mode) {
-  return mode === 'memory' ? new Set(pool.map(item => item.answer)).size : pool.length
+export function arcadePool(state, { subject, scope }, mode = 'flight') {
+  const eligible = item => (!subject || item.subject === subject) && (scope === 'all' || isCourseWorked(state, item.course))
+  const pool = (banks[mode] ?? arcadeQuestions).filter(eligible)
+  if (mode !== 'memory') return pool
+  const answers = new Set()
+  const prompts = new Set()
+  const unique = item => {
+    const answer = memoryKey(item.answer)
+    const prompt = memoryKey(item.prompt)
+    if (answers.has(answer) || prompts.has(prompt)) return false
+    answers.add(answer)
+    prompts.add(prompt)
+    return true
+  }
+  const pairs = pool.filter(unique)
+  if (pairs.length < arcadeModes.memory.min) pairs.push(...memoryExercises.filter(eligible).filter(unique))
+  return pairs
 }
 
 export function startArcade(state, mode, settings, id) {
   if (!Object.hasOwn(arcadeModes, mode)) return null
   const { min, max } = arcadeModes[mode]
-  const pool = shuffle(arcadePool(state, settings))
-  const candidates = mode === 'memory' ? [...new Map(pool.map(item => [item.answer, item])).values()] : pool
-  const questions = candidates.slice(0, max)
-    .map(item => ({ ...item, options: shuffle(item.options) }))
+  const questions = shuffle(arcadePool(state, settings, mode)).slice(0, max)
+    .map(item => item.options ? { ...item, options: shuffle(item.options) } : item)
   if (questions.length < min) return null
   const run = {
     id, mode, subject: settings.subject, assisted: settings.assisted, questions,
-    phase: mode === 'flight' ? 'ready' : 'playing', index: 0, correct: 0, score: 0, combo: 0,
+    phase: mode === 'sprint' || mode === 'memory' ? 'playing' : 'ready', index: 0, correct: 0, score: 0, combo: 0,
+    total: questions.length,
     remaining: sprintDuration, misses: 0, outcome: null,
   }
-  if (mode === 'memory') prepareBoard(run)
+  if (mode === 'memory') {
+    run.board = shuffle(questions.flatMap(question => ['prompt', 'answer'].map(kind => ({ question, kind }))))
+    run.open = []
+    run.matched = []
+  }
+  setupActionRound(run)
   return run
 }
 
@@ -46,17 +76,6 @@ export function markAnswer(run, choice, collision = false) {
     run.combo += 1
     run.score += 100 + (run.mode === 'sprint' ? 25 * Math.min(run.combo - 1, 4) : 0)
   } else run.combo = 0
-}
-
-export function prepareBoard(run) {
-  const remaining = run.questions.length - run.index
-  const size = remaining === 4 ? 4 : Math.min(3, remaining)
-  run.board = shuffle(run.questions.slice(run.index, run.index + size)
-    .flatMap(question => ['prompt', 'answer'].map(kind => ({ question, kind }))))
-  run.open = []
-  run.matched = []
-  run.phase = 'playing'
-  run.outcome = null
 }
 
 export function flipMemory(run, index) {
@@ -103,6 +122,7 @@ export function saveArcadeResult(state, run, now = Date.now()) {
   const entry = days[day] ?? { xp: 0, subjects: {} }
   const xp = Math.min(run.correct * xpPerAnswer, dailyArcadeXp - entry.xp)
   if (run.correct) {
+    entry.correct = (entry.correct ?? entry.xp / xpPerAnswer) + run.correct
     entry.xp += xp
     if (run.subject) {
       const subject = entry.subjects[run.subject] ??= { xp: 0, rounds: 0 }
@@ -113,7 +133,7 @@ export function saveArcadeResult(state, run, now = Date.now()) {
   }
   const record = run.score > (records[run.mode] ?? 0)
   if (record) records[run.mode] = run.score
-  const result = { id: run.id, mode: run.mode, subject: run.subject, score: run.score, correct: run.correct, total: run.questions.length, at: now, xp, record }
+  const result = { id: run.id, mode: run.mode, subject: run.subject, score: run.score, correct: run.correct, total: run.total ?? run.questions.length, at: now, xp, record }
   recent.unshift(result)
   recent.length = Math.min(recent.length, 30)
   return result

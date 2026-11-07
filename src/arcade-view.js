@@ -1,15 +1,21 @@
-import { arcadeModes, arcadePool, arcadeQuestionCount, dailyArcadeXp, sprintDuration, xpPerAnswer } from './arcade.js'
+import { actionModes } from './arcade-action-games.js'
+import { actionGameView } from './arcade-action-view.js'
+import { arcadeModes, arcadePool, dailyArcadeXp, sprintDuration, xpPerAnswer } from './arcade.js'
 import { subjects } from './content.js'
-import { courseById } from './courses.js'
+import { courseById, courses } from './courses.js'
 import { equippedCosmetic } from './pass.js'
-import { dayKey } from './study.js'
-import { avatarArt, button, escapeHtml, heading, icon, link, subjectOptions, tile } from './views.js'
+import { dayKey, isCourseWorked } from './study.js'
+import { avatarArt, button, escapeHtml, heading, icon, link, subjectOptions, tile, workedButton } from './views.js'
 
 const letters = ['A', 'B', 'C']
 const modeCopy = {
   flight: ['ADRESSE', 'Lis la question, puis bats des ailes pour passer dans la porte de la bonne réponse.', 'Jouer au Quiz en vol'],
   sprint: ['RÉFLEXES', 'Enchaîne les bonnes réponses en 45 secondes pour faire monter le combo.', 'Jouer au Sprint'],
-  memory: ['MÉMOIRE', 'Retourne les cartes et retrouve la réponse qui va avec chaque question.', 'Jouer au Mémo Duo'],
+  memory: ['MÉMOIRE', 'Retrouve jusqu’à dix paires sur un seul plateau.', 'Jouer au Mémo Duo'],
+  slice: ['RÉFLEXES', 'Tranche les bons mots ou nombres et épargne les intrus.', 'Jouer à Tranche-Méninges'],
+  snake: ['LOGIQUE', 'Fais grandir ton serpent en avalant les éléments dans le bon ordre.', 'Jouer au Snake'],
+  runner: ['LANGUES', 'Change de voie pour traverser les portes de la bonne traduction.', 'Jouer à Rail Express'],
+  sling: ['ADRESSE', 'Vise la tour de la bonne réponse et fais tomber le château.', 'Jouer au Siège'],
 }
 
 export function arcadeView(state, settings, run) {
@@ -19,35 +25,55 @@ export function arcadeView(state, settings, run) {
   return `<div class="arcade-session">
     <div class="game-topline">${button(`${icon('back', 17)} Arcade`, 'arcade-exit', 'secondary')}<span class="game-subject">${escapeHtml(subject)}</span></div>
     ${heading(modeCopy[run.mode][0], mode.name, modeCopy[run.mode][1])}
-    ${run.phase === 'done' ? results(run) : `<section class="game-panel panel">${hud(run)}
-      ${run.phase === 'paused' ? paused(run) : run.mode === 'memory' ? memoryBoard(run) : quiz(state, run)}
+    ${run.phase === 'done' ? results(run) : `<section class="game-panel panel">${actionModes.includes(run.mode) ? '' : hud(run)}
+      ${run.phase === 'paused' ? paused(run) : actionModes.includes(run.mode) ? actionGameView(state, run) : run.mode === 'memory' ? memoryBoard(run) : quiz(state, run)}
     </section>`}
   </div>`
 }
 
+function chapterPicker(state, settings) {
+  const groups = subjects.filter(subject => courses.some(course => course.subject === subject.id)
+    && (!settings.subject || settings.subject === subject.id))
+  const workedCount = courses.filter(course => (!settings.subject || course.subject === settings.subject) && isCourseWorked(state, course.id)).length
+  return `<details class="panel arcade-chapters" ${!workedCount && settings.scope === 'worked' ? 'open' : ''}>
+    <summary>${icon('book', 19)} <strong>Mes chapitres travaillés</strong> <small>${workedCount} sélectionnés</small></summary>
+    <p>Marque les chapitres que tu as déjà vus. Cette sélection sert aussi aux flashcards et aux autres révisions.</p>
+    <div class="arcade-chapter-groups">${groups.map(subject => {
+      const chapters = courses.filter(course => course.subject === subject.id)
+      const count = chapters.filter(course => isCourseWorked(state, course.id)).length
+      return `<details ${settings.subject ? 'open' : ''}><summary>${escapeHtml(subject.name)} <small>${count} / ${chapters.length}</small></summary>
+        <ul>${chapters.map(course => `<li><a href="#cours/${course.id}">${escapeHtml(course.title)}</a>${workedButton(state, course)}</li>`).join('')}</ul>
+      </details>`
+    }).join('')}</div>
+  </details>`
+}
+
 function lobby(state, settings) {
-  const pool = arcadePool(state, settings)
+  const counts = Object.fromEntries(Object.keys(arcadeModes).map(mode => [mode, arcadePool(state, settings, mode).length]))
+  const available = Object.entries(arcadeModes).filter(([id, mode]) => counts[id] >= mode.min).length
   const todayXp = state.arcade.days[dayKey()]?.xp ?? 0
   return `${heading('RÉVISION EN JEU', 'Arcade', 'Choisis ton jeu, révise et bats ton record.')}
     <section class="arcade-hero panel"><div><span class="arcade-tag">${icon('bolt', 15)} XP DU JOUR</span><h2>${todayXp} / ${dailyArcadeXp} XP</h2><p>Chaque bonne réponse ou paire trouvée rapporte ${xpPerAnswer} XP jusqu’au plafond quotidien. Tes scores restent enregistrés après le plafond.</p></div>
       <div class="arcade-hero-art" aria-hidden="true">${icon('arcade', 102)}<i></i><i></i><i></i></div></section>
     <section class="panel arcade-settings" aria-labelledby="arcade-settings-title">
-      <div><h2 id="arcade-settings-title">Ton terrain de jeu</h2><p>${pool.length} question${pool.length === 1 ? '' : 's'} dans cette sélection</p></div>
+      <div><h2 id="arcade-settings-title">Ton terrain de jeu</h2><p>${available} / ${Object.keys(arcadeModes).length} jeux disponibles pour cette sélection</p></div>
       <label class="field"><span>Matière</span><select id="arcade-subject">${subjectOptions(settings.subject, true, subjects.filter(item => item.id !== 'autre'), 'Toutes')}</select></label>
-      <label class="field"><span>Questions</span><select id="arcade-scope"><option value="all"${settings.scope === 'all' ? ' selected' : ''}>Toutes</option><option value="worked"${settings.scope === 'worked' ? ' selected' : ''}>Cours travaillés</option></select></label>
+      <label class="field"><span>Questions</span><select id="arcade-scope"><option value="worked"${settings.scope === 'worked' ? ' selected' : ''}>Chapitres travaillés</option><option value="all"${settings.scope === 'all' ? ' selected' : ''}>Toute la collection</option></select></label>
       <label class="toggle-field arcade-assist"><input id="arcade-assist" type="checkbox"${settings.assisted ? ' checked' : ''}> Jouer au Quiz en vol sans pilotage</label>
-      ${pool.length ? '' : `<p class="arcade-empty">Aucune question pour cette sélection. Change les filtres ou indique tes chapitres travaillés dans les <a href="#cours">cours</a>.</p>`}
+      ${available ? '' : `<p class="arcade-empty">Aucun jeu pour cette sélection. Indique les chapitres que tu as travaillés ci-dessous ou change de matière.</p>`}
     </section>
+    ${chapterPicker(state, settings)}
     <div class="arcade-grid">${Object.entries(arcadeModes).map(([id, mode]) => {
       const [tag, description, play] = modeCopy[id]
-      const count = arcadeQuestionCount(pool, id)
+      const count = counts[id]
       const record = state.arcade.records[id]
+      const unavailable = id === 'memory' ? '4 paires distinctes minimum' : id === 'runner' ? 'Sélectionne un chapitre d’anglais ou d’espagnol compatible' : 'Aucun défi pour les chapitres sélectionnés'
       return `<article class="arcade-card panel ${mode.color}" data-game="${id}">
         <div class="arcade-card-art" aria-hidden="true">${icon(mode.icon, 54)}<i></i><i></i></div>
         <div class="arcade-card-body"><span class="section-kicker">${tag}</span><h2>${mode.name}</h2><p>${description}</p>
           <div class="game-record">${icon('award', 16)} ${record ? `Record · ${record} pts` : 'Premier record à décrocher'}</div>
           ${button(`${icon('play', 17)} ${play}`, 'arcade-start', 'primary', `data-value="${id}"${count < mode.min ? ' disabled' : ''}`)}
-          ${count < mode.min ? `<small class="game-availability">${mode.min} question${mode.min === 1 ? '' : 's'} minimum</small>` : ''}</div>
+          ${count < mode.min ? `<small class="game-availability">${unavailable}</small>` : ''}</div>
       </article>`
     }).join('')}</div>
     <div class="arcade-footer">${link(`${icon('gift', 17)} Voir le Pass Focus`, 'pass', 'secondary')}</div>`
@@ -115,8 +141,7 @@ function flightField(state, run, playing) {
 function memoryBoard(run) {
   const outcome = run.outcome
   const complete = run.matched.length === run.board.length
-  const last = run.index + run.board.length / 2 === run.questions.length
-  return `<div class="memory-content"><div class="quiz-question"><span class="section-kicker">PLATEAU ${run.index ? 2 : 1}</span><h2 id="game-question" tabindex="-1">Associe les questions et les réponses</h2></div>
+  return `<div class="memory-content"><div class="quiz-question"><span class="section-kicker">${run.board.length} CARTES</span><h2 id="game-question" tabindex="-1">Associe les questions et les réponses</h2></div>
     <div class="memory-grid">${run.board.map(({ question, kind }, index) => {
       const matched = run.matched.includes(index)
       const revealed = matched || run.open.includes(index)
@@ -125,7 +150,7 @@ function memoryBoard(run) {
       return button(content, 'arcade-flip', `memory-card${revealed ? ' revealed' : ''}${matched ? ' matched' : ''}`, `data-value="${index}"${revealed || run.phase === 'feedback' ? ' disabled' : ''}`)
     }).join('')}</div>
     ${outcome ? `<div id="game-feedback" class="game-feedback ${outcome.correct ? 'right' : 'wrong'}" tabindex="-1">${icon(outcome.correct ? 'check' : 'rotate', 21)}<div><h3>${outcome.correct ? 'Paire trouvée !' : 'Deux cartes différentes'}</h3><p>${outcome.correct ? escapeHtml(outcome.question.explanation) : 'Mémorise leur place avant de les retourner.'}</p></div></div>
-      <div class="game-actions">${button(complete ? last ? 'Voir le score' : 'Plateau suivant' : outcome.correct ? 'Continuer' : 'Retourner les cartes', 'arcade-next', 'primary', 'id="game-primary"')}</div>` : ''}
+      <div class="game-actions">${button(complete ? 'Voir le score' : outcome.correct ? 'Continuer' : 'Retourner les cartes', 'arcade-next', 'primary', 'id="game-primary"')}</div>` : ''}
   </div>`
 }
 
@@ -135,9 +160,9 @@ function results(run) {
   return `<section class="panel game-results">
     ${tile(record ? 'crown' : 'award', record ? 'amber' : 'purple')}
     <h2 id="game-question" tabindex="-1">${record ? 'Nouveau record !' : 'Partie terminée'}</h2>
-    <p>${run.mode === 'memory' ? 'Paires trouvées' : 'Bonnes réponses'} · ${run.correct} / ${run.questions.length}</p>
+    <p>${{ memory: 'Paires trouvées', slice: 'Objets à trancher trouvés', snake: 'Éléments mangés dans l’ordre' }[run.mode] ?? 'Bonnes réponses'} · ${run.result.correct} / ${run.result.total}</p>
     <div class="game-result-metrics"><strong>${score}<small>points</small></strong><strong>+${xp}<small>XP</small></strong></div>
     ${xp < run.correct * xpPerAnswer ? '<p>Tu as atteint le plafond d’XP Arcade du jour.</p>' : ''}
-    <div class="toolbar-actions">${button(`${icon('rotate', 17)} Rejouer`, 'arcade-start', 'primary', `data-value="${run.mode}"`)}${link('Voir le Pass Focus', 'pass', 'secondary')}</div>
+    <div class="toolbar-actions">${button(`${icon('rotate', 17)} Rejouer`, 'arcade-start', 'primary', `data-value="${run.mode}"`)}${link('Missions du jour', 'boutique/missions', 'secondary')}${link('Voir le Pass Focus', 'pass', 'secondary')}</div>
   </section>`
 }

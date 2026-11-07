@@ -1,8 +1,10 @@
 # FocusBro
 
-FocusBro est un espace de révision pour la Seconde générale et technologique. Il réunit une bibliothèque de cours, des exercices de maths adaptatifs, un minuteur Pomodoro, des flashcards à répétition espacée, un carnet Feynman guidé et une arcade de révision reliée au Pass Focus.
+FocusBro est un espace de révision pour la Seconde générale et technologique. Il réunit une bibliothèque de cours, des exercices de maths adaptatifs, un minuteur Pomodoro, des flashcards à répétition espacée, un carnet Feynman guidé et une arcade de révision. Le Pass Focus et les missions quotidiennes récompensent tes révisions.
 
 [Ouvrir FocusBro en ligne](https://focusbro-two.vercel.app/)
+
+Créé par [RobinGOUMY](https://github.com/RobinGOUMY). Le crédit et le lien GitHub figurent en bas de chaque page de l’application.
 
 ## Installer et lancer en local
 
@@ -27,17 +29,23 @@ Pour vérifier ou modifier le projet, consulte le [guide de maintenance](docs/ma
 - **Exercices de maths**. Entraîne-toi d’abord sur tes chapitres travaillés. Le menu permet aussi de choisir un chapitre ou de mélanger les 13 chapitres. Après une erreur, lis la correction puis reprends la même méthode avec d’autres valeurs. Deux variantes réussies d’affilée valident la reprise.
 - **Flashcards**. Les questions portent par défaut sur tes chapitres travaillés, en révision espacée comme en entraînement libre. Ouvre « Réglages de la révision » pour changer la matière, le mode ou choisir « Toute la collection » et accéder aux 288 cartes. Quand tu commences une série, les réglages se replient et un compteur indique où tu en es. Dix rappels faciles en révision espacée rapportent 20 XP. Sur une carte de maths fournie, « Moyen » ou « Difficile » lance une reprise immédiate avec d’autres valeurs.
 - **Feynman**. Le carnet te propose des défis sur les chapitres travaillés. Tu peux aussi choisir une autre notion. Chaque défi donne un indice et une réponse à consulter après avoir enregistré ton explication.
-- **Arcade**. Choisis l’une des dix matières ou joue en mode mixte. Les 60 questions sont liées à des cours et peuvent être filtrées sur tes chapitres travaillés. Chaque bonne réponse ou paire trouvée rapporte 3 XP à la fin de la partie, jusqu’à 60 XP d’Arcade par jour. Tes records continuent de compter après ce plafond.
+- **Arcade**. Ouvre « Mes chapitres travaillés » et marque les chapitres déjà vus. Par défaut, les jeux utilisent uniquement ces chapitres, dans la matière choisie ou en mode mixte. Tu peux élargir le filtre à « Toute la collection ». Chaque bonne réponse, paire ou action correcte rapporte 3 XP à la fin de la partie, jusqu’à 60 XP d’Arcade par jour. Tes records et les missions continuent de compter après ce plafond.
   - **Quiz en vol**. Lis la question avant de décoller. Appuie sur Espace ou touche la zone de vol pour battre des ailes et traverse la porte de la bonne réponse. Tu peux aussi choisir directement une réponse avec l’option sans pilotage.
   - **Sprint cérébral**. Tu as 45 secondes pour répondre à une série de questions. Les bonnes réponses consécutives font monter le combo. Le chrono s’arrête pendant les corrections et reprend à la question suivante.
-  - **Mémo Duo**. Retourne des cartes pour associer chaque question à sa réponse. Chaque erreur coûte 15 points et les paires trouvées restent visibles.
-- **Pass Focus**. L’XP de tes Pomodoros, flashcards et parties débloque automatiquement 20 paliers répartis en quatre actes. Équipe les récompenses dans le pass ou dans ton vestiaire. Tu peux combiner 51 cosmétiques répartis entre thèmes, avatars, cadres, bannières, titres et traînées. Les avatars et traînées équipés apparaissent dans le Quiz en vol.
-- **Thèmes du site**. Dans le Pass Focus, ouvre « Voir les thèmes » pour comparer les 14 palettes. Les thèmes changent les couleurs des pages, des menus et de l’Arcade. Tu peux équiper Papier ivoire à 50 XP, Glacier à 400 XP ou Sakura à 1 200 XP si tu préfères un fond clair.
+  - **Mémo Duo**. Associe les questions aux réponses sur un plateau de 8 à 20 cartes. Il mélange les questions de l’Arcade et les flashcards des chapitres choisis. Chaque erreur coûte 15 points et les paires trouvées restent visibles.
+  - **Tranche-Méninges**. Fais glisser le doigt ou la souris sur les mots et les nombres qui suivent la règle affichée. Tu as trois vies pour éviter les intrus.
+  - **Snake en ordre**. Dirige le serpent avec les flèches ou les boutons. Mange les éléments dans l’ordre demandé. Une mauvaise bouchée termine la partie et affiche la correction.
+  - **Rail Express**. Lis la phrase en anglais ou en espagnol. Change de voie avec les flèches gauche et droite ou les boutons de traduction pour passer par la bonne porte.
+  - **Siège du savoir**. Choisis la tour de la bonne réponse et tire. Tu peux aussi armer le lance-pierre en glissant sur le terrain puis en relâchant. Un bon tir fait tomber le château.
+- **Missions du jour**. Depuis l’accueil ou le menu « Butin » sur mobile, retrouve trois défis qui suivent tes révisions. Un Pomodoro rapporte 35 jetons. Deux autres défis tournent entre flashcards, Arcade, cours, maths et Feynman, pour 20 jetons chacun. Récupère les récompenses avant minuit, à l’heure de ton appareil. Les trois réunies ajoutent un bonus de 25 jetons.
+- **Boutique Focus**. Dépense tes jetons dans quatre collections de six objets. Ton XP ouvre l’accès aux articles les plus rares. Ton solde de jetons reste disponible d’un jour à l’autre.
+- **Pass Focus et vestiaire**. L’XP de tes Pomodoros, flashcards et parties débloque automatiquement 20 paliers répartis en quatre actes. Combine les 51 récompenses du pass et les 24 objets de la boutique parmi les thèmes, avatars, cadres, bannières, titres et traînées. Les avatars et traînées équipés apparaissent dans le Quiz en vol.
+- **Thèmes du site**. Dans le Pass Focus, ouvre « Voir les thèmes » pour comparer les 14 palettes du pass, puis les 4 palettes de la boutique. Les thèmes changent les couleurs des pages, des menus et de l’Arcade. Tu peux équiper Papier ivoire à 50 XP, Glacier à 400 XP ou Sakura à 1 200 XP si tu préfères un fond clair.
 - **Progression**. Suis ta série de jours, ton temps par matière, ton XP et tes dernières activités.
 
 ## Créer un compte et retrouver sa progression
 
-Ouvre **Mon compte → Créer un compte**. Choisis un pseudo et un mot de passe de 12 caractères ou plus. FocusBro copie la progression déjà présente dans ce navigateur vers le nouveau compte. Sur un autre appareil, ouvre la même adresse et connecte-toi avec ce pseudo pour récupérer tes notes, tes cartes, tes cours travaillés, ton XP et tes cosmétiques. Garde ton mot de passe dans un gestionnaire, car la récupération par e-mail n’est pas disponible.
+Ouvre **Mon compte → Créer un compte**. Choisis un pseudo et un mot de passe de 12 caractères ou plus. FocusBro copie la progression déjà présente dans ce navigateur vers le nouveau compte. Sur un autre appareil, ouvre la même adresse et connecte-toi avec ce pseudo pour récupérer tes notes, tes cartes, tes cours travaillés, ton XP, tes jetons et tes cosmétiques. Garde ton mot de passe dans un gestionnaire, car la récupération par e-mail n’est pas disponible.
 
 La synchronisation se fait automatiquement. Dans **Mon compte**, vérifie que la progression est sauvegardée en ligne avant de changer d’appareil. Si deux appareils ont des versions différentes, FocusBro te propose de choisir celle à garder. En mode invité, la sauvegarde reste dans le navigateur et sur l’adresse utilisés.
 

@@ -64,6 +64,9 @@ button, a, input, select, textarea { outline-offset: 4px; }
 .xp-pill svg { fill: currentColor; stroke-width: 1px; }
 .avatar { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--raised); color: var(--accent); }
 .mobile-brand, .mobile-nav { display: none; }
+.site-credit { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px; padding: 0 14px 23px; color: var(--muted); font-size: 12px; }
+.site-credit a { display: inline-flex; align-items: center; gap: 3px; color: var(--accent); font-weight: 750; }
+.site-credit a:hover { text-decoration: underline; }
 
 .main-content { width: min(100%, 1480px); margin-inline: auto; padding: 29px clamp(24px, 3.2vw, 54px) 48px; }
 .has-focus-float .main-content { padding-bottom: 92px; }
@@ -387,16 +390,17 @@ body:has(.focus-float) .toast { bottom: calc(80px + env(safe-area-inset-bottom))
 
 @media (max-width: 850px) {
   .sidebar { display: none; }
+  .site-credit { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
   .workspace { margin-left: 0; }
-  .main-content { padding-bottom: calc(87px + env(safe-area-inset-bottom)); }
-  .has-focus-float .main-content { padding-bottom: calc(87px + env(safe-area-inset-bottom)); }
+  .main-content { padding-bottom: 24px; }
+  .has-focus-float .main-content { padding-bottom: 24px; }
   .topbar { min-height: 59px; }
   .has-focus-float .topbar { position: sticky; z-index: 5; top: 0; background: var(--base); }
   html:has(.has-focus-float) { scroll-padding-top: 66px; }
   .mobile-brand { display: inline-flex; align-self: center; gap: 7px; margin: 0; }
   .mobile-brand > span { font-size: 20px; }
   .today-date, .workspace-path { display: none; }
-  .mobile-nav { position: fixed; z-index: 4; inset: auto 0 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 4px max(5px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(5px, env(safe-area-inset-left)); border-top: 1px solid var(--line); background: var(--sidebar); }
+  .mobile-nav { position: fixed; z-index: 4; inset: auto 0 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 4px max(5px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(5px, env(safe-area-inset-left)); border-top: 1px solid var(--line); background: var(--sidebar); }
   .mobile-nav .nav-link { flex-direction: column; justify-content: center; gap: 2px; min-height: 51px; padding: 3px; border-radius: 9px; font-size: 10px; line-height: 1.2; }
   .mobile-nav .nav-link.active { border-color: transparent; background: transparent; }
   .mobile-nav .nav-icon { width: 37px; height: 26px; }
